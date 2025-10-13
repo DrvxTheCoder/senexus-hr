@@ -12,51 +12,125 @@ export type Product = {
 };
 
 //Info: The following data is used for the sidebar navigation and Cmd K bar.
+// For firm-specific navigation (regular users)
 export const navItems: NavItem[] = [
   {
-    title: 'Dashboard',
+    title: 'Tableau de bord',
     url: '/dashboard/overview',
     icon: 'dashboard',
     isActive: false,
     shortcut: ['d', 'd'],
-    items: [] // Empty array as there are no child items for Dashboard
+    items: []
   },
   {
-    title: 'Product',
-    url: '/dashboard/product',
-    icon: 'product',
-    shortcut: ['p', 'p'],
+    title: 'Ressources Humaines',
+    url: '#',
+    icon: 'users',
     isActive: false,
-    items: [] // No child items
-  },
-  {
-    title: 'Account',
-    url: '#', // Placeholder as there is no direct link for the parent
-    icon: 'billing',
-    isActive: true,
-
     items: [
       {
-        title: 'Profile',
-        url: '/dashboard/profile',
-        icon: 'userPen',
-        shortcut: ['m', 'm']
+        title: 'Employés',
+        url: '/dashboard/employees',
+        icon: 'user',
+        shortcut: ['e', 'e']
       },
       {
-        title: 'Login',
-        shortcut: ['l', 'l'],
-        url: '/',
-        icon: 'login'
+        title: 'Départements',
+        url: '/dashboard/departments',
+        icon: 'building',
+        shortcut: ['d', 'p']
+      },
+      {
+        title: 'Congés',
+        url: '/dashboard/leaves',
+        icon: 'calendar'
+      },
+      {
+        title: 'Missions',
+        url: '/dashboard/missions',
+        icon: 'plane'
       }
     ]
   },
   {
-    title: 'Kanban',
-    url: '/dashboard/kanban',
-    icon: 'kanban',
-    shortcut: ['k', 'k'],
+    title: 'CRM',
+    url: '#',
+    icon: 'product',
     isActive: false,
-    items: [] // No child items
+    items: [
+      {
+        title: 'Clients',
+        url: '/dashboard/clients',
+        icon: 'briefcase',
+        shortcut: ['c', 'c']
+      }
+    ]
+  },
+  {
+    title: 'Compte',
+    url: '#',
+    icon: 'billing',
+    isActive: true,
+    items: [
+      {
+        title: 'Profil',
+        url: '/dashboard/profile',
+        icon: 'userPen',
+        shortcut: ['m', 'm']
+      }
+    ]
+  }
+];
+
+// For admin navigation (ADMIN/OWNER users)
+export const adminNavItems: NavItem[] = [
+  {
+    title: "Vue d'ensemble",
+    url: '/admin/dashboard/overview',
+    icon: 'dashboard',
+    isActive: false,
+    shortcut: ['d', 'd'],
+    items: []
+  },
+  {
+    title: 'Administration',
+    url: '#',
+    icon: 'settings',
+    isActive: false,
+    items: [
+      {
+        title: 'Entreprises',
+        url: '/admin/dashboard/firms',
+        icon: 'building',
+        shortcut: ['f', 'f']
+      },
+      {
+        title: 'Utilisateurs',
+        url: '/admin/dashboard/users',
+        icon: 'users',
+        shortcut: ['u', 'u']
+      },
+      {
+        title: 'Modules',
+        url: '/admin/dashboard/modules',
+        icon: 'package',
+        shortcut: ['m', 'd']
+      }
+    ]
+  },
+  {
+    title: 'Compte',
+    url: '#',
+    icon: 'billing',
+    isActive: true,
+    items: [
+      {
+        title: 'Profil',
+        url: '/admin/dashboard/profile',
+        icon: 'userPen',
+        shortcut: ['p', 'p']
+      }
+    ]
   }
 ];
 

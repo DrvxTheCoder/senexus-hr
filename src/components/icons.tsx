@@ -30,13 +30,26 @@ import {
   IconUserX,
   IconX,
   IconLayoutKanban,
-  IconBrandGithub
+  IconBrandGithub,
+  IconBuilding,
+  IconUsersGroup,
+  IconCalendar,
+  IconPlane,
+  IconBriefcase,
+  IconPackage
 } from '@tabler/icons-react';
+import build from 'next/dist/build';
 
 export type Icon = React.ComponentType<IconProps>;
 
 export const Icons = {
   dashboard: IconLayoutDashboard,
+  building: IconBuilding,
+  users: IconUsersGroup,
+  calendar: IconCalendar,
+  plane: IconPlane,
+  briefcase: IconBriefcase,
+  package: IconPackage,
   logo: IconCommand,
   login: IconLogin,
   close: IconX,

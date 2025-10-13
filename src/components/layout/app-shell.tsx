@@ -1,0 +1,39 @@
+import KBar from '@/components/kbar';
+import AppSidebar from '@/components/layout/app-sidebar';
+import Header from '@/components/layout/header';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { ThemeColorProvider } from '@/components/theme-color-provider';
+import { cookies } from 'next/headers';
+
+type AppShellProps = {
+  children: React.ReactNode;
+  firmSlug?: string;
+  firm?: {
+    id: string;
+    name: string;
+    logo: string | null;
+    themeColor: string | null;
+  } | null;
+};
+
+export default async function AppShell({
+  children,
+  firmSlug,
+  firm
+}: AppShellProps) {
+  const cookieStore = await cookies();
+  const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
+
+  return (
+    <KBar>
+      <ThemeColorProvider themeColor={firm?.themeColor} />
+      <SidebarProvider defaultOpen={defaultOpen}>
+        <AppSidebar firmSlug={firmSlug} firm={firm} />
+        <SidebarInset>
+          <Header />
+          {children}
+        </SidebarInset>
+      </SidebarProvider>
+    </KBar>
+  );
+}

@@ -28,10 +28,10 @@ import {
   SidebarMenuSubItem,
   SidebarRail
 } from '@/components/ui/sidebar';
-import { UserAvatarProfile } from '@/components/user-avatar-profile';
-import { navItems } from '@/constants/data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { navItems, adminNavItems } from '@/constants/data';
 import { useMediaQuery } from '@/hooks/use-media-query';
-// import { useUser } from '@clerk/nextjs';
+import { signOut, useSession } from 'next-auth/react';
 import {
   IconBell,
   IconChevronRight,
@@ -41,7 +41,6 @@ import {
   IconPhotoUp,
   IconUserCircle
 } from '@tabler/icons-react';
-// import { SignOutButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -59,16 +58,61 @@ const tenants = [
   { id: '3', name: 'Gamma Ltd' }
 ];
 
-export default function AppSidebar() {
+type AppSidebarProps = {
+  firmSlug?: string;
+  firm?: {
+    id: string;
+    name: string;
+    logo: string | null;
+    themeColor: string | null;
+  } | null;
+};
+
+export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
-  // const { user } = useUser();
+  const { data: session } = useSession();
   const router = useRouter();
-  const handleSwitchTenant = (_tenantId: string) => {
-    // Tenant switching functionality would be implemented here
+  const [firms, setFirms] = React.useState<any[]>([]);
+  const [currentFirm, setCurrentFirm] = React.useState(firm);
+
+  React.useEffect(() => {
+    // Fetch user's firms
+    const fetchFirms = async () => {
+      try {
+        const res = await fetch('/api/user/firms');
+        if (res.ok) {
+          const data = await res.json();
+          setFirms(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch firms:', error);
+      }
+    };
+
+    fetchFirms();
+  }, []);
+
+  const handleSwitchTenant = (tenantId: string) => {
+    const selectedFirm = firms.find((f) => f.id === tenantId);
+    if (selectedFirm) {
+      router.push(`/select-firm?firmId=${selectedFirm.id}`);
+    }
   };
 
-  const activeTenant = tenants[0];
+  const user = session?.user;
+  const initials =
+    user?.name
+      ?.split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase() ||
+    user?.email?.[0].toUpperCase() ||
+    'U';
+
+  // Determine if this is an admin context
+  const isAdminRoute = pathname.startsWith('/admin');
+  const navigation = isAdminRoute ? adminNavItems : navItems;
 
   React.useEffect(() => {
     // Side effects based on sidebar state changes
@@ -78,16 +122,34 @@ export default function AppSidebar() {
     <Sidebar collapsible='icon'>
       <SidebarHeader>
         <OrgSwitcher
-          tenants={tenants}
-          defaultTenant={activeTenant}
+          tenants={firms.map((f) => ({
+            id: f.id,
+            name: f.name,
+            slug: f.slug,
+            logo: f.logo,
+            themeColor: f.themeColor,
+            role: f.role
+          }))}
+          defaultTenant={
+            currentFirm
+              ? {
+                  id: currentFirm.id,
+                  name: currentFirm.name,
+                  logo: currentFirm.logo,
+                  themeColor: currentFirm.themeColor
+                }
+              : tenants[0]
+          }
           onTenantSwitch={handleSwitchTenant}
         />
       </SidebarHeader>
       <SidebarContent className='overflow-x-hidden'>
         <SidebarGroup>
-          <SidebarGroupLabel>Overview</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {isAdminRoute ? 'Administration' : 'Navigation'}
+          </SidebarGroupLabel>
           <SidebarMenu>
-            {navItems.map((item) => {
+            {navigation.map((item) => {
               const Icon = item.icon ? Icons[item.icon] : Icons.logo;
               return item?.items && item?.items?.length > 0 ? (
                 <Collapsible
@@ -152,13 +214,25 @@ export default function AppSidebar() {
                   size='lg'
                   className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground'
                 >
-                  {/* {user && (
-                    <UserAvatarProfile
-                      className='h-8 w-8 rounded-lg'
-                      showInfo
-                      user={user}
-                    />
-                  )} */}
+                  {user && (
+                    <div className='flex items-center gap-2'>
+                      <Avatar className='h-8 w-8 rounded-lg'>
+                        <AvatarImage
+                          src={user.image || ''}
+                          alt={user.name || ''}
+                        />
+                        <AvatarFallback className='rounded-lg'>
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className='grid flex-1 text-left text-sm leading-tight'>
+                        <span className='truncate font-semibold'>
+                          {user.name}
+                        </span>
+                        <span className='truncate text-xs'>{user.email}</span>
+                      </div>
+                    </div>
+                  )}
                   <IconChevronsDown className='ml-auto size-4' />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -169,15 +243,25 @@ export default function AppSidebar() {
                 sideOffset={4}
               >
                 <DropdownMenuLabel className='p-0 font-normal'>
-                  {/* <div className='px-1 py-1.5'>
-                    {user && (
-                      <UserAvatarProfile
-                        className='h-8 w-8 rounded-lg'
-                        showInfo
-                        user={user}
-                      />
-                    )}
-                  </div> */}
+                  {user && (
+                    <div className='flex items-center gap-2 px-1 py-1.5'>
+                      <Avatar className='h-8 w-8 rounded-lg'>
+                        <AvatarImage
+                          src={user.image || ''}
+                          alt={user.name || ''}
+                        />
+                        <AvatarFallback className='rounded-lg'>
+                          {initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className='grid flex-1 text-left text-sm leading-tight'>
+                        <span className='truncate font-semibold'>
+                          {user.name}
+                        </span>
+                        <span className='truncate text-xs'>{user.email}</span>
+                      </div>
+                    </div>
+                  )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
 
@@ -186,11 +270,11 @@ export default function AppSidebar() {
                     onClick={() => router.push('/dashboard/profile')}
                   >
                     <IconUserCircle className='mr-2 h-4 w-4' />
-                    Profile
+                    Profil
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <IconCreditCard className='mr-2 h-4 w-4' />
-                    Billing
+                    Facturation
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <IconBell className='mr-2 h-4 w-4' />
@@ -198,9 +282,12 @@ export default function AppSidebar() {
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => signOut({ callbackUrl: '/auth/sign-in' })}
+                  className='cursor-pointer'
+                >
                   <IconLogout className='mr-2 h-4 w-4' />
-                  {/* <SignOutButton redirectUrl='/auth/sign-in' /> */}
+                  Déconnexion
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

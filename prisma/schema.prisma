@@ -1,0 +1,499 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// NEXTAUTH MODELS
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  userFirms     UserFirm[]
+  employees     Employee[]
+  dashboards    DashboardView[]
+  auditLogs     AuditLog[]
+  uploadedFiles FileObject[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================================
+// MULTI-TENANCY MODELS
+// ============================================================================
+
+enum FirmRole {
+  OWNER
+  ADMIN
+  MANAGER
+  STAFF
+  VIEWER
+}
+
+model Holding {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  firms Firm[]
+
+  @@map("holdings")
+}
+
+model Firm {
+  id          String   @id @default(cuid())
+  holdingId   String
+  name        String
+  slug        String   @unique
+  logo        String?
+  themeColor  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  holding                Holding                       @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  userFirms              UserFirm[]
+  departments            Department[]
+  employees              Employee[]
+  contracts              Contract[]
+  leaveRequests          LeaveRequest[]
+  missions               Mission[]
+  clients                Client[]
+  partners               Partner[]
+  partnerAgreements      PartnerAgreement[]
+  benefitPlans           BenefitPlan[]
+  contributions          Contribution[]
+  claims                 Claim[]
+  files                  FileObject[]
+  dashboards             DashboardView[]
+  auditLogs              AuditLog[]
+
+  @@map("firms")
+}
+
+model UserFirm {
+  id        String   @id @default(cuid())
+  userId    String
+  firmId    String
+  role      FirmRole
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, firmId])
+  @@map("user_firms")
+}
+
+// ============================================================================
+// HR MODULE
+// ============================================================================
+
+model Department {
+  id        String   @id @default(cuid())
+  firmId    String
+  name      String
+  code      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firm      Firm       @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employees Employee[]
+
+  @@unique([firmId, code])
+  @@map("departments")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+model Employee {
+  id           String         @id @default(cuid())
+  firmId       String
+  userId       String?
+  firstName    String
+  lastName     String
+  matricule    String
+  departmentId String?
+  status       EmployeeStatus @default(ACTIVE)
+  hireDate     DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  firm             Firm                           @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user             User?                          @relation(fields: [userId], references: [id])
+  department       Department?                    @relation(fields: [departmentId], references: [id])
+  contracts        Contract[]
+  leaveRequests    LeaveRequest[]
+  requestedMissions Mission[]
+  coverageEnrollments EmployeeCoverageEnrollment[]
+  contributions    Contribution[]
+  claims           Claim[]
+
+  @@unique([firmId, matricule])
+  @@map("employees")
+}
+
+enum ContractType {
+  CDI
+  CDD
+  STAGE
+  PRESTATION
+}
+
+model Contract {
+  id         String       @id @default(cuid())
+  firmId     String
+  employeeId String
+  type       ContractType
+  startDate  DateTime
+  endDate    DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("contracts")
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveRequest {
+  id         String      @id @default(cuid())
+  firmId     String
+  employeeId String
+  startDate  DateTime
+  endDate    DateTime
+  status     LeaveStatus @default(PENDING)
+  reason     String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("leave_requests")
+}
+
+enum MissionStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+}
+
+model Mission {
+  id          String        @id @default(cuid())
+  firmId      String
+  requesterId String
+  title       String
+  destination String
+  startDate   DateTime
+  endDate     DateTime
+  status      MissionStatus @default(DRAFT)
+  purpose     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  firm      Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  requester Employee @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@map("missions")
+}
+
+// ============================================================================
+// CRM MODULE
+// ============================================================================
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  ARCHIVED
+}
+
+model Client {
+  id          String       @id @default(cuid())
+  firmId      String
+  name        String
+  contactName String?
+  taxNumber   String?
+  address     String?
+  tags        String[]
+  status      ClientStatus @default(PROSPECT)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@map("clients")
+}
+
+// ============================================================================
+// IPM (HEALTH INSURANCE) MODULE
+// ============================================================================
+
+enum PartnerType {
+  PHARMACY
+  HOSPITAL
+  CLINIC
+}
+
+model Partner {
+  id        String      @id @default(cuid())
+  firmId    String
+  type      PartnerType
+  name      String
+  slug      String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  firm                Firm                           @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  branches            PartnerBranch[]
+  agreements          PartnerAgreement[]
+  preferredEnrollments EmployeeCoverageEnrollment[]
+  claims              Claim[]
+
+  @@unique([firmId, slug])
+  @@map("partners")
+}
+
+model PartnerBranch {
+  id        String   @id @default(cuid())
+  partnerId String
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@map("partner_branches")
+}
+
+model PartnerAgreement {
+  id           String   @id @default(cuid())
+  partnerId    String
+  firmId       String
+  tariffTable  Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  firm    Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
+
+  @@unique([partnerId, firmId])
+  @@map("partner_agreements")
+}
+
+model BenefitPlan {
+  id        String   @id @default(cuid())
+  firmId    String
+  name      String
+  code      String
+  coverage  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firm          Firm                           @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  enrollments   EmployeeCoverageEnrollment[]
+  contributions Contribution[]
+
+  @@unique([firmId, code])
+  @@map("benefit_plans")
+}
+
+model EmployeeCoverageEnrollment {
+  id                 String   @id @default(cuid())
+  employeeId         String
+  planId             String
+  preferredPartnerId String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  employee        Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  plan            BenefitPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  preferredPartner Partner?     @relation(fields: [preferredPartnerId], references: [id])
+
+  @@unique([employeeId, planId])
+  @@map("employee_coverage_enrollments")
+}
+
+model Contribution {
+  id         String   @id @default(cuid())
+  firmId     String
+  employeeId String
+  planId     String
+  period     String
+  amount     Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  firm     Firm        @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  plan     BenefitPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("contributions")
+}
+
+enum ClaimStatus {
+  SUBMITTED
+  REVIEWING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+model Claim {
+  id            String      @id @default(cuid())
+  firmId        String
+  employeeId    String
+  partnerId     String?
+  amount        Decimal     @db.Decimal(10, 2)
+  status        ClaimStatus @default(SUBMITTED)
+  dateOfService DateTime
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  firm     Firm      @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  partner  Partner?  @relation(fields: [partnerId], references: [id])
+
+  @@map("claims")
+}
+
+// ============================================================================
+// DOCUMENT MANAGEMENT
+// ============================================================================
+
+enum FileEntity {
+  EMPLOYEE
+  CLIENT
+  CONTRACT
+  MISSION
+}
+
+model FileObject {
+  id         String     @id @default(cuid())
+  firmId     String
+  entity     FileEntity
+  entityId   String
+  storageKey String
+  uploadedBy String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  firm     Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploadedBy], references: [id])
+
+  @@map("file_objects")
+}
+
+// ============================================================================
+// BI & AUDIT
+// ============================================================================
+
+model DashboardView {
+  id        String   @id @default(cuid())
+  firmId    String
+  userId    String
+  name      String
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  firm Firm @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("dashboard_views")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  firmId    String?
+  actorId   String
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  firm  Firm? @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  actor User  @relation(fields: [actorId], references: [id])
+
+  @@map("audit_logs")
+}
