@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { firmSchema, FirmFormData } from '@/lib/validations/firm';
 import { DEFAULT_THEMES } from '@/lib/constants/themes';
 import { toast } from 'sonner';
+import { ImageUploader } from '@/components/ui/image-uploader';
 
 type FirmDialogProps = {
   open: boolean;
@@ -37,6 +38,7 @@ type FirmDialogProps = {
     id: string;
     name: string;
     slug: string;
+    logo: string | null;
     holdingId: string;
     themeColor: string | null;
   } | null;
@@ -51,6 +53,7 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
     defaultValues: {
       name: '',
       slug: '',
+      logo: '',
       holdingId: SENEXUS_HOLDING_ID,
       themeColor: 'default'
     }
@@ -61,6 +64,7 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
       form.reset({
         name: firm.name,
         slug: firm.slug,
+        logo: firm.logo || '',
         holdingId: firm.holdingId,
         themeColor: firm.themeColor || 'default'
       });
@@ -68,6 +72,7 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
       form.reset({
         name: '',
         slug: '',
+        logo: '',
         holdingId: SENEXUS_HOLDING_ID,
         themeColor: 'default'
       });
@@ -79,6 +84,8 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
       const url = firm ? `/api/firms/${firm.id}` : '/api/firms';
       const method = firm ? 'PATCH' : 'POST';
 
+      console.log('Submitting firm data:', data);
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -87,8 +94,12 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
 
       if (!res.ok) {
         const error = await res.json();
+        console.error('API error:', error);
         throw new Error(error.error || 'Failed to save');
       }
+
+      const result = await res.json();
+      console.log('API response:', result);
 
       toast.success(
         firm
@@ -97,6 +108,7 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
       );
       onClose(true);
     } catch (error) {
+      console.error('Submit error:', error);
       toast.error(
         error instanceof Error
           ? error.message
@@ -169,11 +181,15 @@ export function FirmDialog({ open, onClose, firm }: FirmDialogProps) {
             name='logo'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Logo URL (optionnel)</FormLabel>
+                <FormLabel>Logo (optionnel)</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder='https://example.com/logo.png'
-                    {...field}
+                  <ImageUploader
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onRemove={() => field.onChange('')}
+                    maxSize={5 * 1024 * 1024}
+                    aspectRatio={1}
+                    disabled={form.formState.isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />

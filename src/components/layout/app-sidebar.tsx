@@ -29,7 +29,7 @@ import {
   SidebarRail
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { navItems, adminNavItems } from '@/constants/data';
+import { getNavItems, adminNavItems } from '@/constants/data';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { signOut, useSession } from 'next-auth/react';
 import {
@@ -47,13 +47,13 @@ import * as React from 'react';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
 export const company = {
-  name: 'Acme Inc',
+  name: 'Senexus Multi-App',
   logo: IconPhotoUp,
   plan: 'Enterprise'
 };
 
 const tenants = [
-  { id: '1', name: 'Acme Inc' },
+  { id: '1', name: 'Senexus Group' },
   { id: '2', name: 'Beta Corp' },
   { id: '3', name: 'Gamma Ltd' }
 ];
@@ -75,6 +75,11 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
   const router = useRouter();
   const [firms, setFirms] = React.useState<any[]>([]);
   const [currentFirm, setCurrentFirm] = React.useState(firm);
+  const [navigation, setNavigation] = React.useState<any[]>([]);
+  const [isLoadingNav, setIsLoadingNav] = React.useState(false);
+
+  // Determine if this is an admin context
+  const isAdminRoute = pathname.startsWith('/admin');
 
   React.useEffect(() => {
     // Fetch user's firms
@@ -93,6 +98,48 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
     fetchFirms();
   }, []);
 
+  // Fetch dynamic navigation for firm context
+  React.useEffect(() => {
+    if (isAdminRoute) {
+      setNavigation(adminNavItems);
+      return;
+    }
+
+    if (!firm?.id || !firmSlug) {
+      // Use static fallback if no firm context
+      setNavigation(firmSlug ? getNavItems(firmSlug) : []);
+      return;
+    }
+
+    // Fetch dynamic navigation from API
+    const fetchNavigation = async () => {
+      setIsLoadingNav(true);
+      try {
+        const res = await fetch(`/api/navigation?firmId=${firm.id}`, {
+          // Add timeout for graceful fallback
+          signal: AbortSignal.timeout(3000) // 3 second timeout
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setNavigation(data.navigation || []);
+        } else {
+          // API error, use static fallback
+          console.warn('Navigation API returned error, using fallback');
+          setNavigation(getNavItems(firmSlug));
+        }
+      } catch (error) {
+        // Network error or timeout, use static fallback
+        console.warn('Failed to fetch navigation, using fallback:', error);
+        setNavigation(getNavItems(firmSlug));
+      } finally {
+        setIsLoadingNav(false);
+      }
+    };
+
+    fetchNavigation();
+  }, [firm?.id, firmSlug, isAdminRoute]);
+
   const handleSwitchTenant = (tenantId: string) => {
     const selectedFirm = firms.find((f) => f.id === tenantId);
     if (selectedFirm) {
@@ -110,14 +157,6 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
     user?.email?.[0].toUpperCase() ||
     'U';
 
-  // Determine if this is an admin context
-  const isAdminRoute = pathname.startsWith('/admin');
-  const navigation = isAdminRoute ? adminNavItems : navItems;
-
-  React.useEffect(() => {
-    // Side effects based on sidebar state changes
-  }, [isOpen]);
-
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader>
@@ -131,14 +170,22 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
             role: f.role
           }))}
           defaultTenant={
-            currentFirm
+            isAdminRoute
               ? {
-                  id: currentFirm.id,
-                  name: currentFirm.name,
-                  logo: currentFirm.logo,
-                  themeColor: currentFirm.themeColor
+                  id: 'admin',
+                  name: 'Administration',
+                  slug: 'admin',
+                  logo: '/assets/img/logos/senexus-mini.png',
+                  themeColor: null
                 }
-              : tenants[0]
+              : currentFirm
+                ? {
+                    id: currentFirm.id,
+                    name: currentFirm.name,
+                    logo: currentFirm.logo,
+                    themeColor: currentFirm.themeColor
+                  }
+                : tenants[0]
           }
           onTenantSwitch={handleSwitchTenant}
         />
@@ -149,8 +196,10 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
             {isAdminRoute ? 'Administration' : 'Navigation'}
           </SidebarGroupLabel>
           <SidebarMenu>
-            {navigation.map((item) => {
-              const Icon = item.icon ? Icons[item.icon] : Icons.logo;
+            {navigation.map((item: any) => {
+              const Icon = item.icon
+                ? Icons[item.icon as keyof typeof Icons]
+                : Icons.logo;
               return item?.items && item?.items?.length > 0 ? (
                 <Collapsible
                   key={item.title}
@@ -171,7 +220,7 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
+                        {item.items?.map((subItem: any) => (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
                               asChild

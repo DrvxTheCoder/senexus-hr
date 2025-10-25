@@ -6,7 +6,13 @@
       "Bash(pnpm:*)",
       "Bash(npx prisma:*)",
       "Bash(npx tsx:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "WebFetch(domain:www.rigidui.com)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(printf:*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(rm:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

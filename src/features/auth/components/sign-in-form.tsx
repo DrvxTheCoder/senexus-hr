@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadingSpinner } from '@/components/loading-spinner';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,10 +11,12 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { is } from 'zod/v4/locales';
 
 export function SignInForm() {
   const router = useRouter();
@@ -89,7 +92,14 @@ export function SignInForm() {
             />
           </div>
           <Button type='submit' className='w-full' disabled={isLoading}>
-            {isLoading ? 'Connexion...' : 'Se connecter'}
+            {isLoading ? (
+              <>
+                <Spinner />
+                Patientez...
+              </>
+            ) : (
+              <>Connexion</>
+            )}
           </Button>
         </form>
 

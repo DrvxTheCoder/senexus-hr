@@ -102,7 +102,8 @@ export async function PATCH(
         where: { id: params.id },
         data: {
           name: validatedData.name,
-          email: validatedData.email
+          email: validatedData.email,
+          image: validatedData.image || null
         },
         select: {
           id: true,

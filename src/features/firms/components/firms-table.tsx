@@ -29,6 +29,7 @@ type Firm = {
   id: string;
   name: string;
   slug: string;
+  logo: string | null;
   themeColor: string | null;
   holdingId: string;
   holding: {
@@ -140,7 +141,7 @@ export function FirmsTable() {
                 <TableHead>Identifiant</TableHead>
                 <TableHead>Holding</TableHead>
                 <TableHead>Couleur du thème</TableHead>
-                <TableHead>Nombre d'utilisateurs</TableHead>
+                <TableHead>Nombre d&apos;utilisateurs</TableHead>
                 <TableHead className='w-[100px]'>Actions</TableHead>
               </TableRow>
             </TableHeader>

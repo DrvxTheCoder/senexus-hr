@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Building2, ChevronRight } from 'lucide-react';
+import { Building2, ChevronRight, Shield } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useThemeConfig } from '@/components/active-theme';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +15,7 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 import { LoadingSpinner } from '@/components/loading-spinner';
+import { TextShimmer } from 'components/motion-primitives/text-shimmer';
 
 type Firm = {
   id: string;
@@ -27,34 +27,122 @@ type Firm = {
 };
 
 export function FirmSelectionClient({ firms }: { firms: Firm[] }) {
-  const router = useRouter();
+  const { setActiveTheme } = useThemeConfig();
   const [selectedFirm, setSelectedFirm] = useState<Firm | null>(null);
+  const [selectedOption, setSelectedOption] = useState<'firm' | 'admin' | null>(
+    null
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // Check if user has admin access
+  const hasAdminAccess = firms.some(
+    (f) => f.role === 'ADMIN' || f.role === 'OWNER'
+  );
+
   const handleFirmClick = (firm: Firm) => {
+    // All users go directly to firm view
     setSelectedFirm(firm);
+    setSelectedOption('firm');
     setIsDialogOpen(true);
+  };
+
+  const handleAdminClick = () => {
+    // Go directly to admin panel
+    setSelectedOption('admin');
+    setIsNavigating(true);
+    setActiveTheme('default');
+    window.location.href = '/admin/dashboard/overview';
   };
 
   const handleConfirm = () => {
     if (!selectedFirm) return;
 
+    setIsDialogOpen(false);
     setIsNavigating(true);
-    const isAdmin =
-      selectedFirm.role === 'ADMIN' || selectedFirm.role === 'OWNER';
-    const basePath = isAdmin ? '/admin' : `/${selectedFirm.slug}`;
 
-    // Apply theme color if available
+    // Apply theme if available
     if (selectedFirm.themeColor) {
-      document.documentElement.style.setProperty(
-        '--primary',
-        selectedFirm.themeColor
-      );
+      setActiveTheme(selectedFirm.themeColor);
     }
 
-    router.push(`${basePath}/dashboard/overview`);
+    // Store selected firm in cookie
+    document.cookie = `selected_firm_id=${selectedFirm.id}; path=/; max-age=31536000; SameSite=Lax`;
+
+    // Navigate to firm dashboard
+    window.location.href = `/${selectedFirm.slug}/dashboard/overview`;
   };
+
+  // Show loading screen for firm navigation
+  if (isNavigating && selectedFirm) {
+    return (
+      <div className='bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm'>
+        <div className='flex flex-col items-center gap-6'>
+          <div className='relative'>
+            {/* Spinning circle border */}
+            <div className='border-t-primary h-32 w-32 animate-spin rounded-full border-4 border-transparent' />
+            {/* Inner logo container */}
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <div
+                className='flex h-24 w-24 items-center justify-center overflow-hidden rounded-full'
+                style={{
+                  backgroundColor: selectedFirm.logo
+                    ? 'white'
+                    : selectedFirm.themeColor || 'hsl(var(--primary))'
+                }}
+              >
+                {selectedFirm.logo ? (
+                  <img
+                    src={selectedFirm.logo}
+                    alt={selectedFirm.name}
+                    className='h-full w-full object-contain'
+                  />
+                ) : (
+                  <Building2 className='h-12 w-12 text-white' />
+                )}
+              </div>
+            </div>
+          </div>
+          <div className='text-center'>
+            <p className='text-lg font-semibold'>Connexion en cours...</p>
+            <p className='text-muted-foreground text-sm'>
+              <TextShimmer>Merci de bien vouloir patienter...</TextShimmer>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading screen for admin navigation
+  if (isNavigating && selectedOption === 'admin') {
+    return (
+      <div className='bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm'>
+        <div className='flex flex-col items-center gap-6'>
+          <div className='relative'>
+            {/* Spinning circle border */}
+            <div className='border-t-primary h-32 w-32 animate-spin rounded-full border-4 border-transparent' />
+            {/* Inner logo container */}
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <div className='bg-primary flex h-24 w-24 items-center justify-center overflow-hidden rounded-full'>
+                <img
+                  src='/assets/img/logos/senexus-mini.png'
+                  alt='Senexus'
+                  className='h-full w-full rounded-full object-cover'
+                />
+              </div>
+            </div>
+          </div>
+          <div className='text-center'>
+            <p className='text-lg font-semibold'>Connexion en cours...</p>
+            <p className='text-muted-foreground text-sm'>
+              Préparation de l&apos;administration
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isNavigating) {
     return <LoadingSpinner />;
@@ -62,7 +150,7 @@ export function FirmSelectionClient({ firms }: { firms: Firm[] }) {
 
   return (
     <div className='from-background to-muted/20 flex min-h-screen items-center justify-center bg-gradient-to-br p-4'>
-      <div className='w-full max-w-4xl'>
+      <div className='w-full max-w-6xl'>
         <div className='mb-8 text-center'>
           <h1 className='mb-2 text-4xl font-bold'>
             Sélectionnez votre entreprise
@@ -73,15 +161,43 @@ export function FirmSelectionClient({ firms }: { firms: Firm[] }) {
           </p>
         </div>
 
-        <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
+        <div className='grid grid-cols-1 flex-wrap justify-center gap-4 md:grid-cols-2 lg:grid-cols-3'>
+          {/* Admin Card */}
+          {hasAdminAccess && (
+            <Card
+              className='group border-muted-foreground/20 cursor-pointer border transition-all hover:scale-105 hover:shadow-lg'
+              onClick={handleAdminClick}
+            >
+              <CardContent className='px-6'>
+                <div className='flex flex-row items-center justify-between gap-2'>
+                  <div className='flex items-center gap-3'>
+                    <div className='flex h-12 w-12 items-center justify-center rounded-lg text-white'>
+                      <img
+                        src='/assets/img/logos/senexus-mini.png'
+                        className='h-full w-full rounded-lg object-cover'
+                      />
+                    </div>
+                    <div>
+                      <h3 className='text-lg font-semibold'>Administration</h3>
+                    </div>
+                  </div>
+                  <div className='border-muted-foreground/20 flex items-center justify-center rounded-full border p-2 transition-all'>
+                    <ChevronRight className='text-muted-foreground group-hover:text-foreground h-5 w-5 transition-colors' />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Firm Cards */}
           {firms.map((firm) => (
             <Card
               key={firm.id}
               className='group cursor-pointer transition-all hover:scale-105 hover:shadow-lg'
               onClick={() => handleFirmClick(firm)}
             >
-              <CardContent className='p-6'>
-                <div className='flex items-start justify-between'>
+              <CardContent className='px-6'>
+                <div className='flex flex-row items-center justify-between gap-2'>
                   <div className='flex items-center gap-3'>
                     <div
                       className='flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg text-white'
@@ -103,12 +219,14 @@ export function FirmSelectionClient({ firms }: { firms: Firm[] }) {
                     </div>
                     <div>
                       <h3 className='text-lg font-semibold'>{firm.name}</h3>
-                      <p className='text-muted-foreground text-sm'>
+                      {/* <p className='text-muted-foreground text-sm'>
                         {firm.role}
-                      </p>
+                      </p> */}
                     </div>
                   </div>
-                  <ChevronRight className='text-muted-foreground group-hover:text-foreground h-5 w-5 transition-colors' />
+                  <div className='border-muted-foreground/20 flex items-center justify-center rounded-full border p-2 transition-all'>
+                    <ChevronRight className='text-muted-foreground group-hover:text-foreground h-5 w-5 transition-colors' />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -123,11 +241,18 @@ export function FirmSelectionClient({ firms }: { firms: Firm[] }) {
             <AlertDialogDescription>
               Vous êtes sur le point de vous connecter à{' '}
               <span className='font-semibold'>{selectedFirm?.name}</span>.
-              Voulez-vous continuer ?
+              Continuer ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogCancel
+              onClick={() => {
+                setSelectedOption(null);
+                setSelectedFirm(null);
+              }}
+            >
+              Annuler
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm}>
               Confirmer
             </AlertDialogAction>

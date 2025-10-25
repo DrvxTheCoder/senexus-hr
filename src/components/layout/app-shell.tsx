@@ -4,6 +4,7 @@ import Header from '@/components/layout/header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { ThemeColorProvider } from '@/components/theme-color-provider';
 import { cookies } from 'next/headers';
+import { ScrollArea } from '../ui/scroll-area';
 
 type AppShellProps = {
   children: React.ReactNode;
@@ -31,7 +32,9 @@ export default async function AppShell({
         <AppSidebar firmSlug={firmSlug} firm={firm} />
         <SidebarInset>
           <Header />
-          {children}
+          <ScrollArea className='h-[calc(100vh-64px)] px-6 pb-8'>
+            {children}
+          </ScrollArea>
         </SidebarInset>
       </SidebarProvider>
     </KBar>

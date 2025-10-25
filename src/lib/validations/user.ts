@@ -3,6 +3,11 @@ import { z } from 'zod';
 export const userSchema = z.object({
   name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
   email: z.string().email('Adresse email invalide'),
+  image: z
+    .string()
+    .url('Image must be a valid URL')
+    .optional()
+    .or(z.literal('')),
   role: z.enum(['OWNER', 'ADMIN', 'MANAGER', 'STAFF', 'VIEWER']),
   firmIds: z
     .array(z.string())
@@ -16,6 +21,11 @@ export const userWithPasswordSchema = z
   .object({
     name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
     email: z.string().email('Adresse email invalide'),
+    image: z
+      .string()
+      .url('Image must be a valid URL')
+      .optional()
+      .or(z.literal('')),
     role: z.enum(['OWNER', 'ADMIN', 'MANAGER', 'STAFF', 'VIEWER']),
     firmIds: z
       .array(z.string())

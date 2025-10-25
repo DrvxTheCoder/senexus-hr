@@ -114,6 +114,7 @@ model Firm {
 
   holding                Holding                       @relation(fields: [holdingId], references: [id], onDelete: Cascade)
   userFirms              UserFirm[]
+  firmModules            FirmModule[]
   departments            Department[]
   employees              Employee[]
   contracts              Contract[]
@@ -145,6 +146,59 @@ model UserFirm {
 
   @@unique([userId, firmId])
   @@map("user_firms")
+}
+
+// ============================================================================
+// MODULE SYSTEM MODELS
+// ============================================================================
+
+model Module {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  version     String
+  icon        String?
+  basePath    String
+  isSystem    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  firmModules       FirmModule[]
+  dependencies      ModuleDependency[] @relation("ModuleDeps")
+  requiredBy        ModuleDependency[] @relation("RequiredBy")
+
+  @@map("modules")
+}
+
+model FirmModule {
+  id          String   @id @default(cuid())
+  firmId      String
+  moduleId    String
+  isEnabled   Boolean  @default(true)
+  settings    Json?
+  installedAt DateTime @default(now())
+  installedBy String?
+
+  firm   Firm   @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, moduleId])
+  @@map("firm_modules")
+}
+
+model ModuleDependency {
+  id          String @id @default(cuid())
+  moduleId    String
+  dependsOnId String
+
+  module    Module @relation("ModuleDeps", fields: [moduleId], references: [id], onDelete: Cascade)
+  dependsOn Module @relation("RequiredBy", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, dependsOnId])
+  @@map("module_dependencies")
 }
 
 // ============================================================================

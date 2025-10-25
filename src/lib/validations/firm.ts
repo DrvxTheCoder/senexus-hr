@@ -13,8 +13,14 @@ export const firmSchema = z.object({
       'Slug must be lowercase alphanumeric with hyphens only'
     ),
   holdingId: z.string().min(1, 'Holding is required'),
-  logo: z.string().url('Logo must be a valid URL').optional().or(z.literal('')),
-  themeColor: z.enum(themeValues).default('default')
+  logo: z
+    .union([
+      z.string().url('Logo must be a valid URL'),
+      z.literal(''),
+      z.undefined()
+    ])
+    .optional(),
+  themeColor: z.enum(themeValues)
 });
 
 export type FirmFormData = z.infer<typeof firmSchema>;

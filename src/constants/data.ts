@@ -12,75 +12,98 @@ export type Product = {
 };
 
 //Info: The following data is used for the sidebar navigation and Cmd K bar.
-// For firm-specific navigation (regular users)
-export const navItems: NavItem[] = [
-  {
-    title: 'Tableau de bord',
-    url: '/dashboard/overview',
-    icon: 'dashboard',
-    isActive: false,
-    shortcut: ['d', 'd'],
-    items: []
-  },
-  {
-    title: 'Ressources Humaines',
-    url: '#',
-    icon: 'users',
-    isActive: false,
-    items: [
-      {
-        title: 'Employés',
-        url: '/dashboard/employees',
-        icon: 'user',
-        shortcut: ['e', 'e']
-      },
-      {
-        title: 'Départements',
-        url: '/dashboard/departments',
-        icon: 'building',
-        shortcut: ['d', 'p']
-      },
-      {
-        title: 'Congés',
-        url: '/dashboard/leaves',
-        icon: 'calendar'
-      },
-      {
-        title: 'Missions',
-        url: '/dashboard/missions',
-        icon: 'plane'
-      }
-    ]
-  },
-  {
-    title: 'CRM',
-    url: '#',
-    icon: 'product',
-    isActive: false,
-    items: [
-      {
-        title: 'Clients',
-        url: '/dashboard/clients',
-        icon: 'briefcase',
-        shortcut: ['c', 'c']
-      }
-    ]
-  },
-  {
-    title: 'Compte',
-    url: '#',
-    icon: 'billing',
-    isActive: true,
-    items: [
-      {
-        title: 'Profil',
-        url: '/dashboard/profile',
-        icon: 'userPen',
-        shortcut: ['m', 'm']
-      }
-    ]
-  }
-];
+
+/**
+ * CORE NAVIGATION - Static items always visible
+ * These are non-module items that are always present
+ * @param firmSlug - The slug of the current firm
+ * @returns Core navigation items with firm slug prefixed
+ */
+export function getCoreNavItems(firmSlug: string): NavItem[] {
+  return [
+    {
+      title: 'Tableau de bord',
+      url: `/${firmSlug}/dashboard/overview`,
+      icon: 'dashboard',
+      isActive: false,
+      shortcut: ['d', 'd'],
+      items: []
+    },
+    {
+      title: 'Compte',
+      url: '#',
+      icon: 'billing',
+      isActive: false,
+      items: [
+        {
+          title: 'Profil',
+          url: `/${firmSlug}/dashboard/profile`,
+          icon: 'userPen',
+          shortcut: ['p', 'p']
+        }
+      ]
+    }
+  ];
+}
+
+/**
+ * FALLBACK MODULE NAVIGATION - Used when API fails
+ * This provides a fallback when dynamic module loading fails
+ * @param firmSlug - The slug of the current firm
+ * @returns Fallback module navigation items
+ */
+export function getFallbackModuleNavItems(firmSlug: string): NavItem[] {
+  return [
+    {
+      title: 'Ressources Humaines',
+      url: `/${firmSlug}/hr`,
+      icon: 'users',
+      isActive: false,
+      items: [
+        {
+          title: 'Tableau de bord',
+          url: `/${firmSlug}/hr`,
+          icon: 'dashboard'
+        },
+        {
+          title: 'Employés',
+          url: `/${firmSlug}/hr/employees`,
+          icon: 'user',
+          shortcut: ['e', 'e']
+        },
+        {
+          title: 'Départements',
+          url: `/${firmSlug}/hr/departments`,
+          icon: 'building',
+          shortcut: ['d', 'p']
+        },
+        {
+          title: 'Congés',
+          url: `/${firmSlug}/hr/leaves`,
+          icon: 'calendar'
+        },
+        {
+          title: 'Missions',
+          url: `/${firmSlug}/hr/missions`,
+          icon: 'plane'
+        }
+      ]
+    }
+  ];
+}
+
+/**
+ * COMPLETE NAVIGATION - Core + Fallback Modules
+ * This is the complete fallback navigation when API is unavailable
+ * @param firmSlug - The slug of the current firm
+ * @returns Complete navigation items
+ */
+export function getNavItems(firmSlug: string): NavItem[] {
+  return [...getCoreNavItems(firmSlug), ...getFallbackModuleNavItems(firmSlug)];
+}
+
+// Legacy export for backward compatibility (uses placeholder)
+export const navItems: NavItem[] = getNavItems('[firmSlug]');
 
 // For admin navigation (ADMIN/OWNER users)
 export const adminNavItems: NavItem[] = [

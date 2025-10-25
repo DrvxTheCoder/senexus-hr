@@ -35,6 +35,7 @@ import {
   UserWithPasswordFormData
 } from '@/lib/validations/user';
 import { toast } from 'sonner';
+import { ImageUploader } from '@/components/ui/image-uploader';
 
 type Firm = { id: string; name: string };
 type Employee = {
@@ -67,6 +68,7 @@ export function UserDialog({ open, onClose, user }: UserDialogProps) {
     defaultValues: {
       name: '',
       email: '',
+      image: '',
       role: 'STAFF',
       firmIds: [],
       employeeId: undefined,
@@ -126,6 +128,7 @@ export function UserDialog({ open, onClose, user }: UserDialogProps) {
       form.reset({
         name: user.name,
         email: user.email,
+        image: (user as any).image || '',
         role,
         firmIds,
         employeeId: undefined,
@@ -136,6 +139,7 @@ export function UserDialog({ open, onClose, user }: UserDialogProps) {
       form.reset({
         name: '',
         email: '',
+        image: '',
         role: 'STAFF' as const,
         firmIds: [],
         employeeId: undefined,
@@ -228,6 +232,27 @@ export function UserDialog({ open, onClose, user }: UserDialogProps) {
                     type='email'
                     placeholder='jean.dupont@example.com'
                     {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='image'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Photo de profil (optionnel)</FormLabel>
+                <FormControl>
+                  <ImageUploader
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    onRemove={() => field.onChange('')}
+                    maxSize={5 * 1024 * 1024}
+                    aspectRatio={1}
+                    disabled={form.formState.isSubmitting}
                   />
                 </FormControl>
                 <FormMessage />

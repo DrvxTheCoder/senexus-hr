@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
         data: {
           name: validatedData.name,
           email: validatedData.email,
+          image: validatedData.image || null,
           passwordHash,
           emailVerified: new Date()
         },
