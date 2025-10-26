@@ -7,15 +7,16 @@
 
 import { ModuleConfig } from './types';
 import { hrModuleConfig } from './hr/config';
+import { crmModuleConfig } from './crm/config';
 
 /**
  * All available modules
  * Add new modules to this array as they're created
  */
 export const ALL_MODULES: ModuleConfig[] = [
-  hrModuleConfig
+  hrModuleConfig,
+  crmModuleConfig
   // Add more modules here:
-  // crmModuleConfig,
   // ipmModuleConfig,
   // accountingModuleConfig,
 ];

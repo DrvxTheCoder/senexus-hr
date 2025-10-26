@@ -12,7 +12,13 @@
       "Bash(printf:*)",
       "Bash(npx tsc --noEmit)",
       "Bash(rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git log:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(cp:*)",
+      "Bash(echo:*)",
+      "Bash(PGPASSWORD=$DB_PASSWORD psql:*)"
     ],
     "deny": [],
     "ask": []

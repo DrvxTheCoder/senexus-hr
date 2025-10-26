@@ -161,54 +161,36 @@ export default async function ModulePage({ params }: ModulePageProps) {
     // Map of available module components
     // This approach is used because Next.js requires static imports for proper bundling
     const componentMap: Record<string, React.ComponentType> = {
-      // HR Module
       'hr/pages/index': (await import('@/modules/hr/pages/index')).default,
       'hr/pages/employees': (await import('@/modules/hr/pages/employees'))
         .default,
       'hr/pages/departments': (await import('@/modules/hr/pages/departments'))
         .default,
       'hr/pages/leaves': (await import('@/modules/hr/pages/leaves')).default,
-      'hr/pages/missions': (await import('@/modules/hr/pages/missions'))
-        .default,
-      'hr/pages/contracts': (await import('@/modules/hr/pages/contracts'))
-        .default,
-      'hr/pages/transfers': (await import('@/modules/hr/pages/transfers'))
-        .default,
-      'hr/pages/absences': (await import('@/modules/hr/pages/absences'))
-        .default,
-      'hr/pages/documents': (await import('@/modules/hr/pages/documents'))
-        .default,
-      'hr/pages/payroll': (await import('@/modules/hr/pages/payroll')).default,
-
-      // CRM Module
-      'crm/pages/index': (await import('@/modules/crm/pages/index')).default,
-      'crm/pages/clients': (await import('@/modules/crm/pages/clients'))
-        .default,
-      'crm/pages/reports': (await import('@/modules/crm/pages/reports')).default
+      'hr/pages/missions': (await import('@/modules/hr/pages/missions')).default
     };
 
     const Component = componentMap[modulePath];
 
     if (!Component) {
       return (
-        <div className='border-muted-foreground/10 flex h-[calc(90vh-64px)] items-center justify-center rounded-lg border-2 border-dashed p-6'>
+        <div className='flex items-center h-[calc(90vh-64px)] justify-center border-2 border-dashed rounded-lg border-muted-foreground/10 p-6'>
           <div className='flex flex-col items-center text-center'>
-            <Grid2X2X className='text-muted-foreground mx-auto mb-4 size-12 md:size-20' />
-            <h1 className='mb-4 text-lg font-bold md:text-3xl'>
-              Fonctionnalité indisponible
-            </h1>
+            <Grid2X2X className='mx-auto mb-4 size-12 md:size-20 text-muted-foreground' />
+            <h1 className='mb-4 text-lg md:text-3xl font-bold'>Fonctionnalité indisponible</h1>
             {/* <p className='text-muted-foreground mb-6 text-sm md:text-base'>
               La fonctionnalité &quot;{matchingRoute.name}&quot; indisponible
             </p> */}
-            <p className='text-muted-foreground border-muted-foreground/10 w-fit rounded border border-dashed p-2 font-mono text-xs md:text-sm'>
+            <p className='w-fit text-muted-foreground font-mono text-xs md:text-sm border border-muted-foreground/10 border-dashed p-2 rounded'>
               <small>Chemin attendu: "src/modules/{modulePath}.tsx"</small>
             </p>
-
-            <a href={`/${firmSlug}/dashboard/overview`}>
-              <Button variant='outline' className='mt-4'>
-                Retour à l&apos;accueil
-              </Button>
+            
+            <a
+              href={`/${firmSlug}/dashboard/overview`}
+            >
+              <Button variant='outline' className='mt-4'>Retour à l&apos;accueil</Button>
             </a>
+            
           </div>
         </div>
       );

@@ -24,20 +24,20 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
-  userFirms          UserFirm[]
-  employees          Employee[]
-  dashboards         DashboardView[]
-  auditLogs          AuditLog[]
-  uploadedFiles      FileObject[]
-  reviewedLeaves     LeaveRequest[]
-  recordedAbsences   Absence[]
-  approvedMissions   Mission[]
-  approvedPayslips   Payslip[]
-  generatedReports   ClientQuarterlyReport[]
-  requestedTransfers EmployeeTransfer[]      @relation("TransferRequester")
-  approvedTransfers  EmployeeTransfer[]      @relation("TransferApprover")
+  accounts              Account[]
+  sessions              Session[]
+  userFirms             UserFirm[]
+  employees             Employee[]
+  dashboards            DashboardView[]
+  auditLogs             AuditLog[]
+  uploadedFiles         FileObject[]
+  reviewedLeaves        LeaveRequest[]
+  recordedAbsences      Absence[]
+  approvedMissions      Mission[]
+  approvedPayslips      Payslip[]
+  generatedReports      ClientQuarterlyReport[]
+  requestedTransfers    EmployeeTransfer[]           @relation("TransferRequester")
+  approvedTransfers     EmployeeTransfer[]           @relation("TransferApprover")
 
   @@map("users")
 }
@@ -110,38 +110,38 @@ model Holding {
 }
 
 model Firm {
-  id         String   @id @default(cuid())
-  holdingId  String
-  name       String
-  slug       String   @unique
-  logo       String?
-  themeColor String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  holdingId   String
+  name        String
+  slug        String   @unique
+  logo        String?
+  themeColor  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  holding           Holding                 @relation(fields: [holdingId], references: [id], onDelete: Cascade)
-  userFirms         UserFirm[]
-  firmModules       FirmModule[]
-  departments       Department[]
-  employees         Employee[]
-  contracts         Contract[]
-  leaveRequests     LeaveRequest[]
-  missions          Mission[]
-  clients           Client[]
-  clientAssignments ClientFirmAssignment[]
-  clientReports     ClientQuarterlyReport[]
-  partners          Partner[]
-  partnerAgreements PartnerAgreement[]
-  benefitPlans      BenefitPlan[]
-  contributions     Contribution[]
-  claims            Claim[]
-  files             FileObject[]
-  dashboards        DashboardView[]
-  auditLogs         AuditLog[]
-  transfersOut      EmployeeTransfer[]      @relation("TransfersOut")
-  transfersIn       EmployeeTransfer[]      @relation("TransfersIn")
-  payrollConfig     PayrollConfig?
-  payslips          Payslip[]
+  holding                Holding                       @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  userFirms              UserFirm[]
+  firmModules            FirmModule[]
+  departments            Department[]
+  employees              Employee[]
+  contracts              Contract[]
+  leaveRequests          LeaveRequest[]
+  missions               Mission[]
+  clients                Client[]
+  clientAssignments      ClientFirmAssignment[]
+  clientReports          ClientQuarterlyReport[]
+  partners               Partner[]
+  partnerAgreements      PartnerAgreement[]
+  benefitPlans           BenefitPlan[]
+  contributions          Contribution[]
+  claims                 Claim[]
+  files                  FileObject[]
+  dashboards             DashboardView[]
+  auditLogs              AuditLog[]
+  transfersOut           EmployeeTransfer[]            @relation("TransfersOut")
+  transfersIn            EmployeeTransfer[]            @relation("TransfersIn")
+  payrollConfig          PayrollConfig?
+  payslips               Payslip[]
 
   @@map("firms")
 }
@@ -179,9 +179,9 @@ model Module {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  firmModules  FirmModule[]
-  dependencies ModuleDependency[] @relation("ModuleDeps")
-  requiredBy   ModuleDependency[] @relation("RequiredBy")
+  firmModules       FirmModule[]
+  dependencies      ModuleDependency[] @relation("ModuleDeps")
+  requiredBy        ModuleDependency[] @relation("RequiredBy")
 
   @@map("modules")
 }
@@ -263,22 +263,23 @@ model Employee {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
-  firm                Firm                         @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  user                User?                        @relation(fields: [userId], references: [id])
-  department          Department?                  @relation("DepartmentEmployees", fields: [departmentId], references: [id])
-  assignedClient      Client?                      @relation(fields: [assignedClientId], references: [id])
-  managedDepartments  Department[]                 @relation("DepartmentManager")
-  contracts           Contract[]
-  leaveRequests       LeaveRequest[]
-  leaveBalances       LeaveBalance[]
-  absences            Absence[]
-  requestedMissions   Mission[]
-  transfersOut        EmployeeTransfer[]           @relation("TransferFrom")
-  salaries            EmployeeSalary[]
-  payslips            Payslip[]
-  coverageEnrollments EmployeeCoverageEnrollment[]
-  contributions       Contribution[]
-  claims              Claim[]
+  firm                    Firm                           @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user                    User?                          @relation(fields: [userId], references: [id])
+  department              Department?                    @relation("DepartmentEmployees", fields: [departmentId], references: [id])
+  assignedClient          Client?                        @relation(fields: [assignedClientId], references: [id])
+  managedDepartment       Department?                    @relation("DepartmentManager")
+  contracts               Contract[]
+  leaveRequests           LeaveRequest[]
+  leaveBalances           LeaveBalance[]
+  absences                Absence[]
+  requestedMissions       Mission[]
+  transfersOut            EmployeeTransfer[]             @relation("TransferFrom")
+  transfersIn             EmployeeTransfer[]             @relation("TransferTo")
+  salaries                EmployeeSalary[]
+  payslips                Payslip[]
+  coverageEnrollments     EmployeeCoverageEnrollment[]
+  contributions           Contribution[]
+  claims                  Claim[]
 
   @@unique([firmId, matricule])
   @@map("employees")
@@ -314,9 +315,9 @@ model Contract {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  client   Client?  @relation(fields: [clientId], references: [id])
+  firm     Firm      @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  client   Client?   @relation(fields: [clientId], references: [id])
 
   @@map("contracts")
 }
@@ -330,29 +331,29 @@ enum TransferStatus {
 }
 
 model EmployeeTransfer {
-  id              String         @id @default(cuid())
-  employeeId      String
-  fromFirmId      String
-  toFirmId        String
-  clientId        String?
-  transferDate    DateTime
-  effectiveDate   DateTime
-  reason          String
-  status          TransferStatus @default(PENDING)
-  requestedBy     String
-  approvedBy      String?
-  approvedAt      DateTime?
-  rejectionReason String?
-  notes           String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                String         @id @default(cuid())
+  employeeId        String
+  fromFirmId        String
+  toFirmId          String
+  clientId          String?
+  transferDate      DateTime
+  effectiveDate     DateTime
+  reason            String
+  status            TransferStatus @default(PENDING)
+  requestedBy       String
+  approvedBy        String?
+  approvedAt        DateTime?
+  rejectionReason   String?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  employee  Employee @relation("TransferFrom", fields: [employeeId], references: [id])
-  fromFirm  Firm     @relation("TransfersOut", fields: [fromFirmId], references: [id])
-  toFirm    Firm     @relation("TransfersIn", fields: [toFirmId], references: [id])
-  client    Client?  @relation(fields: [clientId], references: [id])
-  requester User     @relation("TransferRequester", fields: [requestedBy], references: [id])
-  approver  User?    @relation("TransferApprover", fields: [approvedBy], references: [id])
+  employee   Employee @relation("TransferFrom", fields: [employeeId], references: [id])
+  fromFirm   Firm     @relation("TransfersOut", fields: [fromFirmId], references: [id])
+  toFirm     Firm     @relation("TransfersIn", fields: [toFirmId], references: [id])
+  client     Client?  @relation(fields: [clientId], references: [id])
+  requester  User     @relation("TransferRequester", fields: [requestedBy], references: [id])
+  approver   User?    @relation("TransferApprover", fields: [approvedBy], references: [id])
 
   @@map("employee_transfers")
 }
@@ -395,9 +396,9 @@ model LeaveRequest {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  reviewer User?    @relation(fields: [reviewedBy], references: [id])
+  firm      Firm      @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee  Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewer  User?     @relation(fields: [reviewedBy], references: [id])
 
   @@map("leave_requests")
 }
@@ -408,9 +409,9 @@ model LeaveBalance {
   year          Int
   leaveType     LeaveType
   totalDays     Decimal   @db.Decimal(5, 2)
-  usedDays      Decimal   @default(0) @db.Decimal(5, 2)
+  usedDays      Decimal   @db.Decimal(5, 2) @default(0)
   remainingDays Decimal   @db.Decimal(5, 2)
-  carriedOver   Decimal   @default(0) @db.Decimal(5, 2)
+  carriedOver   Decimal   @db.Decimal(5, 2) @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -531,15 +532,15 @@ model PayrollConfig {
 }
 
 model EmployeeSalary {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   employeeId    String
-  baseSalary    Decimal   @db.Decimal(10, 2)
+  baseSalary    Decimal  @db.Decimal(10, 2)
   variables     Json?
   effectiveDate DateTime
   endDate       DateTime?
   notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   employee Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   payslips Payslip[]
@@ -595,7 +596,7 @@ enum ClientStatus {
 }
 
 model Client {
-  id                String       @id @default(cuid())
+  id                String                   @id @default(cuid())
   firmId            String
   name              String
   contactName       String?
@@ -605,19 +606,19 @@ model Client {
   address           String?
   industry          String?
   tags              String[]
-  status            ClientStatus @default(PROSPECT)
+  status            ClientStatus             @default(PROSPECT)
   contractStartDate DateTime?
   contractEndDate   DateTime?
   notes             String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
 
-  firm              Firm                    @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  firmAssignments   ClientFirmAssignment[]
-  assignedEmployees Employee[]
-  contracts         Contract[]
-  transfers         EmployeeTransfer[]
-  quarterlyReports  ClientQuarterlyReport[]
+  firm               Firm                   @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  firmAssignments    ClientFirmAssignment[]
+  assignedEmployees  Employee[]
+  contracts          Contract[]
+  transfers          EmployeeTransfer[]
+  quarterlyReports   ClientQuarterlyReport[]
 
   @@map("clients")
 }
@@ -641,23 +642,23 @@ model ClientFirmAssignment {
 }
 
 model ClientQuarterlyReport {
-  id            String    @id @default(cuid())
-  firmId        String
-  clientId      String
-  quarter       String
-  year          Int
-  quarterNumber Int
-  employeeCount Int
-  totalHours    Decimal?  @db.Decimal(10, 2)
-  totalCost     Decimal?  @db.Decimal(10, 2)
-  reportData    Json
-  generatedAt   DateTime  @default(now())
-  generatedBy   String
-  pdfUrl        String?
-  excelUrl      String?
-  sentAt        DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String   @id @default(cuid())
+  firmId          String
+  clientId        String
+  quarter         String
+  year            Int
+  quarterNumber   Int
+  employeeCount   Int
+  totalHours      Decimal? @db.Decimal(10, 2)
+  totalCost       Decimal? @db.Decimal(10, 2)
+  reportData      Json
+  generatedAt     DateTime @default(now())
+  generatedBy     String
+  pdfUrl          String?
+  excelUrl        String?
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   firm      Firm   @relation(fields: [firmId], references: [id], onDelete: Cascade)
   client    Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -686,11 +687,11 @@ model Partner {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
-  firm                 Firm                         @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  branches             PartnerBranch[]
-  agreements           PartnerAgreement[]
+  firm                Firm                           @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  branches            PartnerBranch[]
+  agreements          PartnerAgreement[]
   preferredEnrollments EmployeeCoverageEnrollment[]
-  claims               Claim[]
+  claims              Claim[]
 
   @@unique([firmId, slug])
   @@map("partners")
@@ -710,12 +711,12 @@ model PartnerBranch {
 }
 
 model PartnerAgreement {
-  id          String   @id @default(cuid())
-  partnerId   String
-  firmId      String
-  tariffTable Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  partnerId    String
+  firmId       String
+  tariffTable  Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   partner Partner @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   firm    Firm    @relation(fields: [firmId], references: [id], onDelete: Cascade)
@@ -733,7 +734,7 @@ model BenefitPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  firm          Firm                         @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  firm          Firm                           @relation(fields: [firmId], references: [id], onDelete: Cascade)
   enrollments   EmployeeCoverageEnrollment[]
   contributions Contribution[]
 
@@ -749,9 +750,9 @@ model EmployeeCoverageEnrollment {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  employee         Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  plan             BenefitPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-  preferredPartner Partner?    @relation(fields: [preferredPartnerId], references: [id])
+  employee        Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  plan            BenefitPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  preferredPartner Partner?     @relation(fields: [preferredPartnerId], references: [id])
 
   @@unique([employeeId, planId])
   @@map("employee_coverage_enrollments")
@@ -793,9 +794,9 @@ model Claim {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  partner  Partner? @relation(fields: [partnerId], references: [id])
+  firm     Firm      @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  partner  Partner?  @relation(fields: [partnerId], references: [id])
 
   @@map("claims")
 }

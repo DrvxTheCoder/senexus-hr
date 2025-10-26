@@ -1,23 +1,30 @@
 /**
  * HR Module Configuration
  *
- * This module handles:
- * - Employee management
- * - Department management
- * - Leave requests
- * - Missions/assignments
+ * Enhanced module for interim staffing agencies in Senegal
+ * Handles complete employee lifecycle with compliance for 2-year interim law
  */
 
 import { ModuleConfig } from '@/modules/types';
-import { Users, Building2, Calendar, Briefcase } from 'lucide-react';
+import {
+  Users,
+  Building2,
+  Calendar,
+  Briefcase,
+  FileText,
+  ArrowRightLeft,
+  UserX,
+  DollarSign,
+  FolderOpen
+} from 'lucide-react';
 import { FirmRole } from '@prisma/client';
 
 export const hrModuleConfig: ModuleConfig = {
   id: 'hr-module',
   slug: 'hr',
   name: 'Ressources Humaines',
-  description: 'Gestion des employés, départements, congés et missions',
-  version: '1.0.0',
+  description: 'Gestion complète des employés intérimaires et RH',
+  version: '2.0.0',
   icon: Users,
   basePath: '/hr',
   permissions: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER],
@@ -38,27 +45,70 @@ export const hrModuleConfig: ModuleConfig = {
       requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
     },
     {
-      path: 'departments',
-      name: 'Départements',
-      icon: Building2,
-      component: './pages/departments',
+      path: 'contracts',
+      name: 'Contrats',
+      icon: FileText,
+      component: './pages/contracts',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
+    },
+    {
+      path: 'transfers',
+      name: 'Transferts',
+      icon: ArrowRightLeft,
+      component: './pages/transfers',
       requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
     },
     {
       path: 'leaves',
       name: 'Congés',
       icon: Calendar,
-      component: './pages/leaves'
+      component: './pages/leaves',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
+    },
+    {
+      path: 'absences',
+      name: 'Absences',
+      icon: UserX,
+      component: './pages/absences',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
     },
     {
       path: 'missions',
       name: 'Missions',
       icon: Briefcase,
-      component: './pages/missions'
+      component: './pages/missions',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
+    },
+    {
+      path: 'documents',
+      name: 'Documents',
+      icon: FolderOpen,
+      component: './pages/documents',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
+    },
+    {
+      path: 'payroll',
+      name: 'Paie',
+      icon: DollarSign,
+      component: './pages/payroll',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
+    },
+    {
+      path: 'departments',
+      name: 'Départements',
+      icon: Building2,
+      component: './pages/departments',
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
     }
   ],
   metadata: {
     color: '#3b82f6',
-    category: 'Operations'
+    category: 'Operations',
+    compliance: {
+      country: 'Senegal',
+      interimLawCompliant: true,
+      maxInterimDuration: 730,
+      annualLeaveDays: 20
+    }
   }
 };

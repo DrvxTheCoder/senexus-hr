@@ -32,7 +32,7 @@ export default async function AppShell({
         <AppSidebar firmSlug={firmSlug} firm={firm} />
         <SidebarInset>
           <Header />
-          <ScrollArea className='h-[calc(100vh-64px)] px-6 pb-8'>
+          <ScrollArea className='h-[calc(95vh-64px)] px-6 py-4'>
             {children}
           </ScrollArea>
         </SidebarInset>

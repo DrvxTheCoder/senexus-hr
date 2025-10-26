@@ -9,7 +9,7 @@ export default async function FirmDashboardLayout({
   params
 }: {
   children: React.ReactNode;
-  params: { firmSlug: string };
+  params: Promise<{ firmSlug: string }>;
 }) {
   const session = await getServerSession(authOptions);
 
@@ -17,9 +17,11 @@ export default async function FirmDashboardLayout({
     redirect('/auth/sign-in');
   }
 
+  const { firmSlug } = await params;
+
   // Find the firm by slug
   const firm = await db.firm.findUnique({
-    where: { slug: params.firmSlug }
+    where: { slug: firmSlug }
   });
 
   if (!firm) {
@@ -42,7 +44,7 @@ export default async function FirmDashboardLayout({
 
   return (
     <AppShell
-      firmSlug={params.firmSlug}
+      firmSlug={firmSlug}
       firm={{
         id: firm.id,
         name: firm.name,

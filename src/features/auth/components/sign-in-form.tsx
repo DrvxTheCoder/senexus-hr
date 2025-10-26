@@ -55,11 +55,19 @@ export function SignInForm() {
   }
 
   return (
-    <Card className='w-full max-w-md'>
+    <Card className='mx-auto w-full max-w-md'>
       <CardHeader className='space-y-1'>
-        <CardTitle className='text-2xl font-bold'>Connexion</CardTitle>
-        <CardDescription>
-          Entrez vos identifiants pour accéder à votre compte
+        <CardTitle className='text-center text-2xl font-bold'>
+          <img
+            src='/assets/img/logos/senexus-mini.png'
+            alt='Senexus Group Logo'
+            className='mx-auto mb-2 h-10 w-auto rounded-md'
+          />
+          Connexion
+        </CardTitle>
+        <CardDescription className='text-center'>
+          Connexion à la plateforme{' '}
+          <b className='font-extrabold'>Senexus Multi-App</b>
         </CardDescription>
       </CardHeader>
       <CardContent>
