@@ -5,6 +5,7 @@ import { z } from 'zod';
  */
 export const createClientSchema = z.object({
   name: z.string().min(1, 'Le nom du client est requis'),
+  photoUrl: z.string().optional(),
   contactName: z.string().optional(),
   contactEmail: z.string().email('Email invalide').optional().or(z.literal('')),
   contactPhone: z.string().optional(),
@@ -25,6 +26,7 @@ export const createClientSchema = z.object({
  */
 export const updateClientSchema = z.object({
   name: z.string().min(1).optional(),
+  photoUrl: z.string().optional().nullable(),
   contactName: z.string().optional().nullable(),
   contactEmail: z.string().email().optional().nullable().or(z.literal('')),
   contactPhone: z.string().optional().nullable(),

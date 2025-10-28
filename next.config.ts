@@ -9,6 +9,16 @@ const baseConfig: NextConfig = {
         protocol: 'https',
         hostname: 'api.slingacademy.com',
         port: ''
+      },
+      {
+        protocol: 'http',
+        hostname: 'zipline.flanpaul.dev',
+        port: ''
+      },
+      {
+        protocol: 'https',
+        hostname: 'zipline.flanpaul.dev',
+        port: ''
       }
     ]
   },

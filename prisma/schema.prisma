@@ -250,6 +250,7 @@ model Employee {
   firstName           String
   lastName            String
   matricule           String
+  photoUrl            String?
   departmentId        String?
   assignedClientId    String?
   assignmentStartDate DateTime?
@@ -598,6 +599,7 @@ model Client {
   id                String       @id @default(cuid())
   firmId            String
   name              String
+  photoUrl          String?
   contactName       String?
   contactEmail      String?
   contactPhone      String?

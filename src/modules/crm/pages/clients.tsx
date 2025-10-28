@@ -44,6 +44,7 @@ import {
   createClient,
   updateClient
 } from '../actions/client-actions';
+import { ProfilePhotoUpload } from '@/components/profile-photo-upload';
 import { toast } from 'sonner';
 
 type Client = any;
@@ -61,6 +62,7 @@ export default function ClientsPage() {
   const [firmId, setFirmId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
+    photoUrl: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -159,6 +161,7 @@ export default function ClientsPage() {
     setSelectedClient(null);
     setFormData({
       name: '',
+      photoUrl: '',
       contactName: '',
       contactEmail: '',
       contactPhone: '',
@@ -176,6 +179,7 @@ export default function ClientsPage() {
     setSelectedClient(client);
     setFormData({
       name: client.name,
+      photoUrl: client.photoUrl || '',
       contactName: client.contactName || '',
       contactEmail: client.contactEmail || '',
       contactPhone: client.contactPhone || '',
@@ -386,6 +390,17 @@ export default function ClientsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
+            {/* Profile Photo */}
+            <div className='space-y-2'>
+              <Label>Photo de profil</Label>
+              <ProfilePhotoUpload
+                value={formData.photoUrl}
+                onValueChange={(url) =>
+                  setFormData({ ...formData, photoUrl: url || '' })
+                }
+              />
+            </div>
+
             <div className='grid grid-cols-2 gap-4'>
               <div className='space-y-2'>
                 <Label htmlFor='name'>Nom du client *</Label>

@@ -43,6 +43,7 @@ import {
   updateEmployee
 } from '../actions/employee-actions';
 import { getClients } from '@/modules/crm/actions/client-actions';
+import { ProfilePhotoUpload } from '@/components/profile-photo-upload';
 import { formatDateFR, formatDuration } from '../utils/date-utils';
 import { toast } from 'sonner';
 
@@ -68,6 +69,7 @@ export default function EmployeesPage() {
     firstName: '',
     lastName: '',
     matricule: '',
+    photoUrl: '',
     email: '',
     phone: '',
     address: '',
@@ -190,6 +192,7 @@ export default function EmployeesPage() {
       firstName: '',
       lastName: '',
       matricule: '',
+      photoUrl: '',
       email: '',
       phone: '',
       address: '',
@@ -214,6 +217,7 @@ export default function EmployeesPage() {
       firstName: employee.firstName,
       lastName: employee.lastName,
       matricule: employee.matricule,
+      photoUrl: employee.photoUrl || '',
       email: employee.email || '',
       phone: employee.phone || '',
       address: employee.address || '',
@@ -467,6 +471,17 @@ export default function EmployeesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
+            {/* Profile Photo */}
+            <div className='space-y-2'>
+              <Label>Photo de profil</Label>
+              <ProfilePhotoUpload
+                value={formData.photoUrl}
+                onValueChange={(url) =>
+                  setFormData({ ...formData, photoUrl: url || '' })
+                }
+              />
+            </div>
+
             {/* Personal Information */}
             <div className='space-y-2'>
               <h3 className='text-muted-foreground text-sm font-semibold'>
