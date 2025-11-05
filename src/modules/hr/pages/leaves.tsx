@@ -17,7 +17,7 @@ export default function LeavesPage() {
   const leaveRequests = [
     {
       id: '1',
-      employee: 'Marie Dubois',
+      employee: 'Ousmane Ba',
       type: 'Congés payés',
       startDate: '2025-11-01',
       endDate: '2025-11-05',
@@ -27,7 +27,7 @@ export default function LeavesPage() {
     },
     {
       id: '2',
-      employee: 'Jean Martin',
+      employee: 'Mamadou Ndiaye',
       type: 'Congés maladie',
       startDate: '2025-10-28',
       endDate: '2025-10-30',
@@ -37,7 +37,7 @@ export default function LeavesPage() {
     },
     {
       id: '3',
-      employee: 'Sophie Laurent',
+      employee: 'Awa Thiam',
       type: 'Congés payés',
       startDate: '2025-12-20',
       endDate: '2025-12-31',
@@ -47,7 +47,7 @@ export default function LeavesPage() {
     },
     {
       id: '4',
-      employee: 'Pierre Durand',
+      employee: 'Aminata Diallo',
       type: 'RTT',
       startDate: '2025-11-15',
       endDate: '2025-11-15',
@@ -57,7 +57,7 @@ export default function LeavesPage() {
     },
     {
       id: '5',
-      employee: 'Claire Moreau',
+      employee: 'Fatou Seck',
       type: 'Congés sans solde',
       startDate: '2025-11-10',
       endDate: '2025-11-12',

@@ -1,24 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node:*)",
-      "Bash(npm:*)",
-      "Bash(pnpm:*)",
-      "Bash(npx prisma:*)",
-      "Bash(npx tsx:*)",
-      "Bash(tree:*)",
-      "WebFetch(domain:www.rigidui.com)",
-      "Bash(npx shadcn@latest add:*)",
-      "Bash(printf:*)",
-      "Bash(npx tsc --noEmit)",
-      "Bash(rm:*)",
-      "Bash(git add:*)",
-      "Bash(git log:*)",
-      "Bash(git commit:*)",
-      "Bash(git push)",
-      "Bash(cp:*)",
-      "Bash(echo:*)",
-      "Bash(PGPASSWORD=$DB_PASSWORD psql:*)"
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma studio)"
     ],
     "deny": [],
     "ask": []

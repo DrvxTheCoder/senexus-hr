@@ -207,9 +207,11 @@ export async function createEmployee(
         ...validatedData,
         firmId,
         hireDate: new Date(validatedData.hireDate),
-        firstInterimDate: new Date(validatedData.firstInterimDate),
-        assignmentStartDate: validatedData.assignmentStartDate
-          ? new Date(validatedData.assignmentStartDate)
+        dateOfBirth: validatedData.dateOfBirth
+          ? new Date(validatedData.dateOfBirth)
+          : null,
+        contractEndDate: validatedData.contractEndDate
+          ? new Date(validatedData.contractEndDate)
           : null
       },
       include: {
@@ -309,13 +311,11 @@ export async function updateEmployee(
     if (validatedData.hireDate) {
       updateData.hireDate = new Date(validatedData.hireDate);
     }
-    if (validatedData.firstInterimDate) {
-      updateData.firstInterimDate = new Date(validatedData.firstInterimDate);
+    if (validatedData.dateOfBirth) {
+      updateData.dateOfBirth = new Date(validatedData.dateOfBirth);
     }
-    if (validatedData.assignmentStartDate) {
-      updateData.assignmentStartDate = new Date(
-        validatedData.assignmentStartDate
-      );
+    if (validatedData.contractEndDate) {
+      updateData.contractEndDate = new Date(validatedData.contractEndDate);
     }
 
     // Update employee
@@ -448,7 +448,8 @@ export async function deleteEmployee(
 
 /**
  * Calculate interim duration for an employee
- * Returns days until 2-year limit is reached
+ * Returns days since hire date
+ * Note: firstInterimDate field has been removed, using hireDate instead
  */
 export async function calculateInterimDuration(
   employeeId: string
@@ -462,13 +463,13 @@ export async function calculateInterimDuration(
       return { success: false, error: 'Employé non trouvé' };
     }
 
-    const firstInterimDate = new Date(employee.firstInterimDate);
+    const hireDate = new Date(employee.hireDate);
     const now = new Date();
-    const twoYearsLater = new Date(firstInterimDate);
+    const twoYearsLater = new Date(hireDate);
     twoYearsLater.setFullYear(twoYearsLater.getFullYear() + 2);
 
     const daysElapsed = Math.floor(
-      (now.getTime() - firstInterimDate.getTime()) / (1000 * 60 * 60 * 24)
+      (now.getTime() - hireDate.getTime()) / (1000 * 60 * 60 * 24)
     );
     const daysRemaining = Math.floor(
       (twoYearsLater.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
@@ -479,7 +480,7 @@ export async function calculateInterimDuration(
     return {
       success: true,
       data: {
-        firstInterimDate,
+        hireDate,
         endDate: twoYearsLater,
         daysElapsed,
         daysRemaining: Math.max(0, daysRemaining),

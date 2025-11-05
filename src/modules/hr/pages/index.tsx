@@ -1,9 +1,74 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Building2, Calendar, Briefcase } from 'lucide-react';
+import { getEmployees } from '../actions/employee-actions';
+
+interface DashboardStats {
+  totalEmployees: number;
+  activeEmployees: number;
+  onLeave: number;
+  inactive: number;
+}
 
 export default function HRDashboard() {
+  const params = useParams();
+  const firmSlug = params.firmSlug as string;
+
+  const [stats, setStats] = useState<DashboardStats>({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    onLeave: 0,
+    inactive: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [firmSlug]);
+
+  async function fetchDashboardData() {
+    try {
+      setLoading(true);
+
+      // Fetch firm ID from firmSlug
+      const firmResponse = await fetch(`/api/firms?slug=${firmSlug}`);
+      const firms = await firmResponse.json();
+      const firm = firms[0];
+
+      if (!firm) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch employees
+      const employees = await getEmployees(firm.id);
+      const activeCount = employees.filter(
+        (e: any) => e.status === 'ACTIVE'
+      ).length;
+      const onLeaveCount = employees.filter(
+        (e: any) => e.status === 'ON_LEAVE'
+      ).length;
+      const inactiveCount = employees.filter(
+        (e: any) => e.status === 'INACTIVE'
+      ).length;
+
+      setStats({
+        totalEmployees: employees.length,
+        activeEmployees: activeCount,
+        onLeave: onLeaveCount,
+        inactive: inactiveCount
+      });
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setLoading(false);
+    }
+  }
+
   return (
     <div className='flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8'>
       <div className='flex items-center justify-between'>
@@ -27,129 +92,115 @@ export default function HRDashboard() {
             <Users className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>245</div>
-            <p className='text-muted-foreground text-xs'>
-              +12% par rapport au mois dernier
-            </p>
+            <div className='text-2xl font-bold'>
+              {loading ? '...' : stats.totalEmployees}
+            </div>
+            <p className='text-muted-foreground text-xs'>Effectif total</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Départements</CardTitle>
+            <CardTitle className='text-sm font-medium'>Actifs</CardTitle>
             <Building2 className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>8</div>
-            <p className='text-muted-foreground text-xs'>
-              Actifs dans l&apos;organisation
-            </p>
+            <div className='text-2xl font-bold text-green-600'>
+              {loading ? '...' : stats.activeEmployees}
+            </div>
+            <p className='text-muted-foreground text-xs'>Employés actifs</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              Congés en attente
-            </CardTitle>
+            <CardTitle className='text-sm font-medium'>En congé</CardTitle>
             <Calendar className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>12</div>
+            <div className='text-2xl font-bold text-orange-600'>
+              {loading ? '...' : stats.onLeave}
+            </div>
             <p className='text-muted-foreground text-xs'>
-              Nécessitent une approbation
+              Absents temporairement
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>
-              Missions actives
-            </CardTitle>
+            <CardTitle className='text-sm font-medium'>Inactifs</CardTitle>
             <Briefcase className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>34</div>
-            <p className='text-muted-foreground text-xs'>En cours ce mois</p>
+            <div className='text-2xl font-bold text-gray-600'>
+              {loading ? '...' : stats.inactive}
+            </div>
+            <p className='text-muted-foreground text-xs'>Non actifs</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Recent Activity */}
+      {/* Activity Info */}
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-7'>
         <Card className='col-span-4'>
           <CardHeader>
-            <CardTitle>Activité récente</CardTitle>
+            <CardTitle>Bienvenue au module RH</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-4'>
-              {[
-                {
-                  title: 'Nouveau employé ajouté',
-                  description: 'Marie Dubois - Développeur Senior',
-                  time: 'Il y a 2 heures'
-                },
-                {
-                  title: 'Demande de congé approuvée',
-                  description: 'Jean Martin - 5 jours de congé',
-                  time: 'Il y a 4 heures'
-                },
-                {
-                  title: 'Mission complétée',
-                  description: 'Projet Alpha - Client XYZ',
-                  time: 'Il y a 1 jour'
-                },
-                {
-                  title: 'Nouveau département créé',
-                  description: 'Innovation & R&D',
-                  time: 'Il y a 2 jours'
-                }
-              ].map((activity, index) => (
-                <div key={index} className='flex items-start space-x-4'>
-                  <div className='bg-primary/10 flex h-9 w-9 items-center justify-center rounded-full'>
-                    <div className='bg-primary h-2 w-2 rounded-full' />
-                  </div>
-                  <div className='flex-1 space-y-1'>
-                    <p className='text-sm leading-none font-medium'>
-                      {activity.title}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>
-                      {activity.description}
-                    </p>
-                    <p className='text-muted-foreground text-xs'>
-                      {activity.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              <p className='text-muted-foreground'>
+                Utilisez le menu de navigation pour accéder aux différentes
+                fonctionnalités:
+              </p>
+              <ul className='text-muted-foreground list-inside list-disc space-y-2'>
+                <li>Gestion des employés</li>
+                <li>Gestion des congés</li>
+                <li>Suivi des missions</li>
+                <li>Rapports et statistiques</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
 
         <Card className='col-span-3'>
           <CardHeader>
-            <CardTitle>Aperçu des départements</CardTitle>
+            <CardTitle>Statistiques rapides</CardTitle>
           </CardHeader>
           <CardContent>
             <div className='space-y-4'>
               {[
-                { name: 'IT & Développement', count: 45, color: 'bg-blue-500' },
                 {
-                  name: 'Ressources Humaines',
-                  count: 12,
+                  label: "Taux d'activité",
+                  value:
+                    stats.totalEmployees > 0
+                      ? `${Math.round((stats.activeEmployees / stats.totalEmployees) * 100)}%`
+                      : '0%',
                   color: 'bg-green-500'
                 },
-                { name: 'Marketing', count: 28, color: 'bg-purple-500' },
-                { name: 'Ventes', count: 35, color: 'bg-orange-500' },
-                { name: 'Support Client', count: 22, color: 'bg-pink-500' }
-              ].map((dept, index) => (
-                <div key={index} className='flex items-center'>
-                  <div className={`${dept.color} mr-3 h-2 w-2 rounded-full`} />
-                  <div className='flex-1'>
-                    <p className='text-sm font-medium'>{dept.name}</p>
+                {
+                  label: 'En congé',
+                  value:
+                    stats.totalEmployees > 0
+                      ? `${Math.round((stats.onLeave / stats.totalEmployees) * 100)}%`
+                      : '0%',
+                  color: 'bg-orange-500'
+                },
+                {
+                  label: 'Inactifs',
+                  value:
+                    stats.totalEmployees > 0
+                      ? `${Math.round((stats.inactive / stats.totalEmployees) * 100)}%`
+                      : '0%',
+                  color: 'bg-gray-500'
+                }
+              ].map((stat, index) => (
+                <div key={index} className='flex items-center justify-between'>
+                  <div className='flex items-center gap-2'>
+                    <div className={`${stat.color} h-2 w-2 rounded-full`} />
+                    <span className='text-sm font-medium'>{stat.label}</span>
                   </div>
-                  <div className='text-sm font-medium'>{dept.count}</div>
+                  <span className='text-sm font-bold'>{stat.value}</span>
                 </div>
               ))}
             </div>

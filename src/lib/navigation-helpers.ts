@@ -10,6 +10,7 @@ import { db } from '@/lib/db';
 import { FirmRole } from '@prisma/client';
 import { getModuleRegistry } from '@/core/module-registry';
 import { getCoreNavItems, getFallbackModuleNavItems } from '@/constants/data';
+import { Icons } from '@/components/icons';
 
 /**
  * Get navigation items for a specific firm with dynamic module loading
@@ -158,25 +159,25 @@ export async function getModuleNavItems(
  * @param icon - Icon component or string
  * @returns Icon name string
  */
-function getIconName(icon: any): string {
+function getIconName(icon: any): keyof typeof Icons | undefined {
   if (typeof icon === 'string') {
-    return icon;
+    return icon as keyof typeof Icons;
   }
 
   // Map common icons
-  const iconMap: Record<string, string> = {
+  const iconMap: Record<string, keyof typeof Icons> = {
     Users: 'users',
     Building2: 'building',
     Calendar: 'calendar',
     Briefcase: 'briefcase',
     Package: 'package',
-    FileText: 'fileText',
-    BarChart: 'barChart',
-    Heart: 'heart'
+    FileText: 'post',
+    BarChart: 'dashboard',
+    Heart: 'check'
   };
 
   const iconName = icon?.displayName || icon?.name || 'package';
-  return iconMap[iconName] || iconName.toLowerCase();
+  return iconMap[iconName] || (iconName.toLowerCase() as keyof typeof Icons);
 }
 
 /**

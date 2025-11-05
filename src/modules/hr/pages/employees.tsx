@@ -14,6 +14,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
@@ -35,21 +36,28 @@ import {
   Search,
   AlertTriangle,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Upload,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import {
   getEmployees,
   createEmployee,
-  updateEmployee
+  updateEmployee,
+  deleteEmployee
 } from '../actions/employee-actions';
 import { getClients } from '@/modules/crm/actions/client-actions';
 import { ProfilePhotoUpload } from '@/components/profile-photo-upload';
 import { formatDateFR, formatDuration } from '../utils/date-utils';
 import { toast } from 'sonner';
+import { EmployeeBulkImport } from '../components/employee-bulk-import';
 
 type Employee = any;
 type Client = any;
-type Department = any;
 
 export default function EmployeesPage() {
   const params = useParams();
@@ -59,12 +67,20 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [clientFilter, setClientFilter] = useState<string>('all');
   const [firmId, setFirmId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
+    null
+  );
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
   );
   const [clients, setClients] = useState<Client[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -74,10 +90,16 @@ export default function EmployeesPage() {
     phone: '',
     address: '',
     hireDate: '',
-    firstInterimDate: '',
+    dateOfBirth: '',
+    placeOfBirth: '',
+    maritalStatus: '',
+    nationality: '',
+    cni: '',
+    jobTitle: '',
+    category: '',
+    contractEndDate: '',
     departmentId: '',
     assignedClientId: '',
-    assignmentStartDate: '',
     status: 'ACTIVE' as any,
     emergencyContact: {
       name: '',
@@ -149,14 +171,29 @@ export default function EmployeesPage() {
   }
 
   const filteredEmployees = employees.filter((emp) => {
-    return (
+    const matchesSearch =
       searchQuery === '' ||
       `${emp.firstName} ${emp.lastName}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      emp.matricule.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+      emp.matricule.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesClient =
+      clientFilter === 'all' || emp.assignedClientId === clientFilter;
+
+    return matchesSearch && matchesClient;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredEmployees.length / pageSize);
+  const startIndex = currentPage * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchQuery, clientFilter, statusFilter]);
 
   const stats = {
     total: employees.length,
@@ -197,10 +234,16 @@ export default function EmployeesPage() {
       phone: '',
       address: '',
       hireDate: '',
-      firstInterimDate: '',
+      dateOfBirth: '',
+      placeOfBirth: '',
+      maritalStatus: '',
+      nationality: '',
+      cni: '',
+      jobTitle: '',
+      category: '',
+      contractEndDate: '',
       departmentId: '',
       assignedClientId: '',
-      assignmentStartDate: '',
       status: 'ACTIVE',
       emergencyContact: {
         name: '',
@@ -213,6 +256,19 @@ export default function EmployeesPage() {
 
   const handleEditEmployee = (employee: Employee) => {
     setSelectedEmployee(employee);
+
+    // Helper function to safely format dates
+    const formatDate = (dateValue: any) => {
+      if (!dateValue) return '';
+      if (typeof dateValue === 'string') {
+        return dateValue.split('T')[0];
+      }
+      if (dateValue instanceof Date) {
+        return dateValue.toISOString().split('T')[0];
+      }
+      return '';
+    };
+
     setFormData({
       firstName: employee.firstName,
       lastName: employee.lastName,
@@ -221,13 +277,17 @@ export default function EmployeesPage() {
       email: employee.email || '',
       phone: employee.phone || '',
       address: employee.address || '',
-      hireDate: employee.hireDate.split('T')[0],
-      firstInterimDate: employee.firstInterimDate.split('T')[0],
+      hireDate: formatDate(employee.hireDate),
+      dateOfBirth: formatDate(employee.dateOfBirth),
+      placeOfBirth: employee.placeOfBirth || '',
+      maritalStatus: employee.maritalStatus || '',
+      nationality: employee.nationality || '',
+      cni: employee.cni || '',
+      jobTitle: employee.jobTitle || '',
+      category: employee.category || '',
+      contractEndDate: formatDate(employee.contractEndDate),
       departmentId: employee.departmentId || '',
       assignedClientId: employee.assignedClientId || '',
-      assignmentStartDate: employee.assignmentStartDate
-        ? employee.assignmentStartDate.split('T')[0]
-        : '',
       status: employee.status,
       emergencyContact: employee.emergencyContact || {
         name: '',
@@ -236,6 +296,29 @@ export default function EmployeesPage() {
       }
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteEmployee = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!employeeToDelete) return;
+
+    try {
+      const result = await deleteEmployee(employeeToDelete.id);
+      if (result.success) {
+        toast.success('Employé supprimé avec succès');
+        setIsDeleteDialogOpen(false);
+        setEmployeeToDelete(null);
+        fetchEmployees();
+      } else {
+        toast.error(result.error || 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
   };
 
   const handleSubmit = async () => {
@@ -253,7 +336,14 @@ export default function EmployeesPage() {
           formData.assignedClientId && formData.assignedClientId !== 'none'
             ? formData.assignedClientId
             : undefined,
-        assignmentStartDate: formData.assignmentStartDate || undefined,
+        dateOfBirth: formData.dateOfBirth || undefined,
+        placeOfBirth: formData.placeOfBirth || undefined,
+        maritalStatus: formData.maritalStatus || undefined,
+        nationality: formData.nationality || undefined,
+        cni: formData.cni || undefined,
+        jobTitle: formData.jobTitle || undefined,
+        category: formData.category || undefined,
+        contractEndDate: formData.contractEndDate || undefined,
         emergencyContact: formData.emergencyContact.name
           ? formData.emergencyContact
           : undefined
@@ -300,10 +390,16 @@ export default function EmployeesPage() {
             Gérer tous les employés intérimaires
           </p>
         </div>
-        <Button onClick={handleAddEmployee}>
-          <Plus className='mr-2 h-4 w-4' />
-          Ajouter un employé
-        </Button>
+        <div className='flex gap-2'>
+          <Button variant='outline' onClick={() => setIsBulkImportOpen(true)}>
+            <Upload className='mr-2 h-4 w-4' />
+            Importer CSV
+          </Button>
+          <Button onClick={handleAddEmployee}>
+            <Plus className='mr-2 h-4 w-4' />
+            Ajouter un employé
+          </Button>
+        </div>
       </div>
 
       <div className='grid gap-4 md:grid-cols-4'>
@@ -352,7 +448,7 @@ export default function EmployeesPage() {
           <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
             <CardTitle>Liste des employés</CardTitle>
             <div className='flex items-center gap-2'>
-              <div className='relative w-full md:w-[300px]'>
+              <div className='relative w-full md:w-[250px]'>
                 <Search className='text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4' />
                 <Input
                   placeholder='Rechercher...'
@@ -361,6 +457,19 @@ export default function EmployeesPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <Select value={clientFilter} onValueChange={setClientFilter}>
+                <SelectTrigger className='w-[180px]'>
+                  <SelectValue placeholder='Client' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='all'>Tous les clients</SelectItem>
+                  {clients.map((client) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className='w-[150px]'>
                   <SelectValue placeholder='Statut' />
@@ -393,26 +502,48 @@ export default function EmployeesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEmployees.map((emp) => {
+                {paginatedEmployees.map((emp) => {
+                  // Safely parse hire date
+                  const hireDate = emp.hireDate
+                    ? new Date(emp.hireDate)
+                    : new Date();
                   const days = Math.floor(
-                    (new Date().getTime() -
-                      new Date(emp.firstInterimDate).getTime()) /
+                    (new Date().getTime() - hireDate.getTime()) /
                       (1000 * 60 * 60 * 24)
                   );
                   const remaining = Math.max(0, 730 - days);
 
+                  // Get initials for fallback
+                  const initials =
+                    `${emp.firstName?.[0] || ''}${emp.lastName?.[0] || ''}`.toUpperCase();
+
                   return (
                     <TableRow key={emp.id}>
+                      <TableCell>
+                        <div className='flex items-center gap-3'>
+                          <Avatar className='h-8 w-8'>
+                            <AvatarImage
+                              src={emp.photoUrl || '/assets/img/profile.jpg'}
+                              alt={`${emp.firstName} ${emp.lastName}`}
+                            />
+                            <AvatarFallback className='text-xs'>
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>
+                            {emp.firstName} {emp.lastName}
+                          </span>
+                        </div>
+                      </TableCell>
                       <TableCell className='font-mono'>
                         {emp.matricule}
-                      </TableCell>
-                      <TableCell>
-                        {emp.firstName} {emp.lastName}
                       </TableCell>
                       <TableCell>{emp.department?.name || '-'}</TableCell>
                       <TableCell>{emp.assignedClient?.name || '-'}</TableCell>
                       <TableCell>{getStatusBadge(emp.status)}</TableCell>
-                      <TableCell>{formatDateFR(emp.hireDate)}</TableCell>
+                      <TableCell>
+                        {emp.hireDate ? formatDateFR(emp.hireDate) : '-'}
+                      </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-2'>
                           <span className='text-sm'>
@@ -435,13 +566,23 @@ export default function EmployeesPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => handleEditEmployee(emp)}
-                        >
-                          Modifier
-                        </Button>
+                        <div className='flex gap-1'>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleEditEmployee(emp)}
+                          >
+                            Modifier
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => handleDeleteEmployee(emp)}
+                            className='text-red-600 hover:text-red-700'
+                          >
+                            <Trash2 className='h-4 w-4' />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -454,12 +595,98 @@ export default function EmployeesPage() {
               Aucun employé trouvé
             </div>
           )}
+
+          {/* Pagination Controls */}
+          {!loading && filteredEmployees.length > 0 && (
+            <div className='mt-4 flex items-center justify-between border-t px-4 pt-4'>
+              <div className='text-muted-foreground hidden flex-1 text-sm lg:flex'>
+                Affichage de {startIndex + 1} à{' '}
+                {Math.min(endIndex, filteredEmployees.length)} sur{' '}
+                {filteredEmployees.length} employé(s)
+              </div>
+              <div className='flex w-full items-center gap-8 lg:w-fit'>
+                <div className='hidden items-center gap-2 lg:flex'>
+                  <Label
+                    htmlFor='rows-per-page'
+                    className='text-sm font-medium'
+                  >
+                    Lignes par page
+                  </Label>
+                  <Select
+                    value={`${pageSize}`}
+                    onValueChange={(value) => {
+                      setPageSize(Number(value));
+                      setCurrentPage(0);
+                    }}
+                  >
+                    <SelectTrigger
+                      size='sm'
+                      className='w-20'
+                      id='rows-per-page'
+                    >
+                      <SelectValue placeholder={pageSize} />
+                    </SelectTrigger>
+                    <SelectContent side='top'>
+                      {[10, 20, 30, 40, 50].map((size) => (
+                        <SelectItem key={size} value={`${size}`}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='flex w-fit items-center justify-center text-sm font-medium'>
+                  Page {currentPage + 1} sur {totalPages}
+                </div>
+                <div className='ml-auto flex items-center gap-2 lg:ml-0'>
+                  <Button
+                    variant='outline'
+                    className='hidden h-8 w-8 p-0 lg:flex'
+                    onClick={() => setCurrentPage(0)}
+                    disabled={currentPage === 0}
+                  >
+                    <span className='sr-only'>Aller à la première page</span>
+                    <ChevronsLeft className='h-4 w-4' />
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-8 w-8'
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                    disabled={currentPage === 0}
+                  >
+                    <span className='sr-only'>Page précédente</span>
+                    <ChevronLeft className='h-4 w-4' />
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    className='h-8 w-8'
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                    disabled={currentPage >= totalPages - 1}
+                  >
+                    <span className='sr-only'>Page suivante</span>
+                    <ChevronRight className='h-4 w-4' />
+                  </Button>
+                  <Button
+                    variant='outline'
+                    className='hidden h-8 w-8 p-0 lg:flex'
+                    onClick={() => setCurrentPage(totalPages - 1)}
+                    disabled={currentPage >= totalPages - 1}
+                  >
+                    <span className='sr-only'>Aller à la dernière page</span>
+                    <ChevronsRight className='h-4 w-4' />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Employee Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className='max-h-[90vh] max-w-3xl overflow-y-auto'>
+        <DialogContent className='h-full max-h-[60vh] w-full max-w-[70vw] overflow-y-auto md:max-h-[90vh] md:max-w-[50vw]'>
           <DialogHeader>
             <DialogTitle>
               {selectedEmployee ? "Modifier l'employé" : 'Nouvel employé'}
@@ -582,6 +809,68 @@ export default function EmployeesPage() {
               </div>
             </div>
 
+            {/* Additional Personal Info */}
+            <div className='space-y-2'>
+              <h3 className='text-muted-foreground text-sm font-semibold'>
+                Informations complémentaires
+              </h3>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='dateOfBirth'>Date de naissance</Label>
+                  <Input
+                    id='dateOfBirth'
+                    type='date'
+                    value={formData.dateOfBirth}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dateOfBirth: e.target.value })
+                    }
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='placeOfBirth'>Lieu de naissance</Label>
+                  <Input
+                    id='placeOfBirth'
+                    value={formData.placeOfBirth}
+                    onChange={(e) =>
+                      setFormData({ ...formData, placeOfBirth: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='nationality'>Nationalité</Label>
+                  <Input
+                    id='nationality'
+                    value={formData.nationality}
+                    onChange={(e) =>
+                      setFormData({ ...formData, nationality: e.target.value })
+                    }
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='cni'>CNI</Label>
+                  <Input
+                    id='cni'
+                    value={formData.cni}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cni: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className='space-y-2'>
+                <Label htmlFor='maritalStatus'>Situation matrimoniale</Label>
+                <Input
+                  id='maritalStatus'
+                  value={formData.maritalStatus}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maritalStatus: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
             {/* Employment Information */}
             <div className='space-y-2'>
               <h3 className='text-muted-foreground text-sm font-semibold'>
@@ -600,21 +889,40 @@ export default function EmployeesPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='firstInterimDate'>
-                    1ère date d&apos;intérim *
-                    <span className='text-muted-foreground ml-2 text-xs'>
-                      (Loi 2 ans)
-                    </span>
+                  <Label htmlFor='contractEndDate'>
+                    Date de fin de contrat
                   </Label>
                   <Input
-                    id='firstInterimDate'
+                    id='contractEndDate'
                     type='date'
-                    value={formData.firstInterimDate}
+                    value={formData.contractEndDate}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        firstInterimDate: e.target.value
+                        contractEndDate: e.target.value
                       })
+                    }
+                  />
+                </div>
+              </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='space-y-2'>
+                  <Label htmlFor='jobTitle'>Emploi</Label>
+                  <Input
+                    id='jobTitle'
+                    value={formData.jobTitle}
+                    onChange={(e) =>
+                      setFormData({ ...formData, jobTitle: e.target.value })
+                    }
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='category'>Catégorie</Label>
+                  <Input
+                    id='category'
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
                     }
                   />
                 </div>
@@ -626,45 +934,29 @@ export default function EmployeesPage() {
               <h3 className='text-muted-foreground text-sm font-semibold'>
                 Affectation
               </h3>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='assignedClientId'>Client assigné</Label>
-                  <Select
-                    value={formData.assignedClientId || undefined}
-                    onValueChange={(value) =>
-                      setFormData({
-                        ...formData,
-                        assignedClientId: value === 'none' ? '' : value
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder='Sélectionner un client' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='none'>Aucun</SelectItem>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='assignmentStartDate'>Date de début</Label>
-                  <Input
-                    id='assignmentStartDate'
-                    type='date'
-                    value={formData.assignmentStartDate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        assignmentStartDate: e.target.value
-                      })
-                    }
-                  />
-                </div>
+              <div className='space-y-2'>
+                <Label htmlFor='assignedClientId'>Client assigné</Label>
+                <Select
+                  value={formData.assignedClientId || undefined}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      assignedClientId: value === 'none' ? '' : value
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder='Sélectionner un client' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='none'>Aucun</SelectItem>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -734,6 +1026,50 @@ export default function EmployeesPage() {
             </Button>
             <Button onClick={handleSubmit}>
               {selectedEmployee ? 'Mettre à jour' : 'Créer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Import Dialog */}
+      {firmId && (
+        <EmployeeBulkImport
+          isOpen={isBulkImportOpen}
+          onClose={() => setIsBulkImportOpen(false)}
+          firmId={firmId}
+          clients={clients}
+          onImportComplete={fetchEmployees}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmer la suppression</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer cet employé?
+              {employeeToDelete && (
+                <div className='mt-2 font-medium'>
+                  {employeeToDelete.firstName} {employeeToDelete.lastName} (
+                  {employeeToDelete.matricule})
+                </div>
+              )}
+              <div className='mt-2 text-sm text-orange-600'>
+                Note: L&apos;employé sera marqué comme TERMINÉ au lieu
+                d&apos;être supprimé définitivement.
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button variant='destructive' onClick={confirmDelete}>
+              Supprimer
             </Button>
           </DialogFooter>
         </DialogContent>

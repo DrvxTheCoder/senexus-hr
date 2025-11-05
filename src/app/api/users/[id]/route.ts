@@ -8,7 +8,7 @@ import * as bcrypt from 'bcryptjs';
 // GET /api/users/[id] - Get a single user
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,8 +16,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const user = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         name: true,
@@ -68,7 +69,7 @@ export async function GET(
 // PATCH /api/users/[id] - Update a user
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -76,6 +77,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await req.json();
     const validatedData = userSchema.parse(body);
 
@@ -84,7 +86,7 @@ export async function PATCH(
       const existingUser = await db.user.findFirst({
         where: {
           email: validatedData.email,
-          NOT: { id: params.id }
+          NOT: { id }
         }
       });
 
@@ -99,7 +101,7 @@ export async function PATCH(
     // Update user with firm assignments in a transaction
     const user = await db.$transaction(async (tx) => {
       const updatedUser = await tx.user.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           name: validatedData.name,
           email: validatedData.email,
@@ -120,14 +122,14 @@ export async function PATCH(
       if (validatedData.firmIds) {
         // Delete existing firm assignments
         await tx.userFirm.deleteMany({
-          where: { userId: params.id }
+          where: { userId: id }
         });
 
         // Create new firm assignments
         if (validatedData.firmIds.length > 0) {
           await tx.userFirm.createMany({
             data: validatedData.firmIds.map((firmId) => ({
-              userId: params.id,
+              userId: id,
               firmId,
               role: validatedData.role
             }))
@@ -139,7 +141,7 @@ export async function PATCH(
       if (validatedData.employeeId !== undefined) {
         // Remove previous employee link
         await tx.employee.updateMany({
-          where: { userId: params.id },
+          where: { userId: id },
           data: { userId: null }
         });
 
@@ -147,7 +149,7 @@ export async function PATCH(
         if (validatedData.employeeId) {
           await tx.employee.update({
             where: { id: validatedData.employeeId },
-            data: { userId: params.id }
+            data: { userId: id }
           });
         }
       }
@@ -190,7 +192,7 @@ export async function PATCH(
 // DELETE /api/users/[id] - Delete a user
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -198,8 +200,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     // Prevent self-deletion
-    if (params.id === session.user.id) {
+    if (id === session.user.id) {
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
@@ -207,7 +210,7 @@ export async function DELETE(
     }
 
     const user = await db.user.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     // Log the action

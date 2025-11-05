@@ -7,7 +7,7 @@ import { firmSchema } from '@/lib/validations/firm';
 // GET /api/firms/[id] - Get a single firm
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,8 +15,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const firm = await db.firm.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         holding: true,
         userFirms: {
@@ -59,7 +60,7 @@ export async function GET(
 // PATCH /api/firms/[id] - Update a firm
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -67,6 +68,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await req.json();
     const validatedData = firmSchema.parse(body);
 
@@ -74,7 +76,7 @@ export async function PATCH(
     const existingFirm = await db.firm.findFirst({
       where: {
         slug: validatedData.slug,
-        NOT: { id: params.id }
+        NOT: { id }
       }
     });
 
@@ -86,7 +88,7 @@ export async function PATCH(
     }
 
     const firm = await db.firm.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData,
       include: {
         holding: true,
@@ -125,7 +127,7 @@ export async function PATCH(
 // DELETE /api/firms/[id] - Delete a firm
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -133,8 +135,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const firm = await db.firm.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     // Log the action

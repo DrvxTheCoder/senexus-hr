@@ -58,7 +58,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 const installModuleSchema = z.object({
   moduleId: z.string(),
   isEnabled: z.boolean().default(true),
-  settings: z.record(z.any()).optional()
+  settings: z.record(z.string(), z.any()).optional()
 });
 
 export async function POST(request: Request, { params }: RouteParams) {
@@ -88,11 +88,11 @@ export async function POST(request: Request, { params }: RouteParams) {
     const data = installModuleSchema.parse(body);
 
     // Check if module exists
-    const module = await db.module.findUnique({
+    const moduleRecord = await db.module.findUnique({
       where: { id: data.moduleId }
     });
 
-    if (!module) {
+    if (!moduleRecord) {
       return NextResponse.json({ error: 'Module not found' }, { status: 404 });
     }
 
@@ -130,7 +130,7 @@ export async function POST(request: Request, { params }: RouteParams) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

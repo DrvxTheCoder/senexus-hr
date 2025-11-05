@@ -52,7 +52,7 @@ const createModuleSchema = z.object({
   basePath: z.string().min(1),
   isSystem: z.boolean().default(false),
   isActive: z.boolean().default(true),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 export async function POST(request: Request) {
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const module = await db.module.create({
+    const moduleRecord = await db.module.create({
       data: {
         slug: data.slug,
         name: data.name,
@@ -104,11 +104,11 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(module, { status: 201 });
+    return NextResponse.json(moduleRecord, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

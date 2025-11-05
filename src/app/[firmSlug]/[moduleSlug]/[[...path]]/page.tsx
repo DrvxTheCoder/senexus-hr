@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { getModuleRegistry } from '@/core/module-registry';
 import { IconBlocks, IconBoxOff } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
-import { Grid2X2X } from 'lucide-react';
+import { BanIcon, FolderSearch, Grid2X2X, SearchX } from 'lucide-react';
 
 interface ModulePageProps {
   params: Promise<{
@@ -54,18 +54,26 @@ export default async function ModulePage({ params }: ModulePageProps) {
 
   if (!firmModule) {
     return (
-      <div className='flex min-h-screen items-center justify-center'>
-        <div className='text-center'>
-          <h1 className='mb-4 text-3xl font-bold'>Module non disponible</h1>
-          <p className='text-muted-foreground mb-6'>
-            Le module &quot;{moduleSlug}&quot; n&apos;est pas installé ou activé
-            pour cette entreprise.
+      <div className='border-muted-foreground/10 flex h-[calc(90vh-64px)] items-center justify-center rounded-lg border-2 border-dashed p-6'>
+        <div className='flex flex-col items-center text-center'>
+          <FolderSearch className='text-muted-foreground mx-auto mb-4 size-12 md:size-20' />
+          <h1 className='mb-4 text-lg font-bold md:text-3xl'>
+            Module introuvable...
+          </h1>
+          {/* <p className='text-muted-foreground mb-6 text-sm md:text-base'>
+              La fonctionnalité &quot;{matchingRoute.name}&quot; indisponible
+            </p> */}
+          <p className='text-muted-foreground border-muted-foreground/10 w-fit rounded border border-dashed p-2 font-mono text-xs md:text-sm'>
+            <small>
+              Le module &quot;{moduleSlug}&quot; n&apos;est pas installé ou
+              activé pour cette entreprise.
+            </small>
           </p>
-          <a
-            href={`/${firmSlug}/dashboard/overview`}
-            className='text-primary hover:underline'
-          >
-            Retour au tableau de bord
+
+          <a href={`/${firmSlug}/dashboard/overview`}>
+            <Button variant='outline' className='mt-4'>
+              Retour à l&apos;accueil
+            </Button>
           </a>
         </div>
       </div>
@@ -89,18 +97,24 @@ export default async function ModulePage({ params }: ModulePageProps) {
     !moduleConfig.permissions.includes(userRole)
   ) {
     return (
-      <div className='flex min-h-screen items-center justify-center'>
-        <div className='text-center'>
-          <h1 className='mb-4 text-3xl font-bold'>Accès refusé</h1>
-          <p className='text-muted-foreground mb-6'>
-            Vous n&apos;avez pas les permissions nécessaires pour accéder à ce
-            module.
+      <div className='border-muted-foreground/10 flex h-[calc(90vh-64px)] items-center justify-center rounded-lg border-2 border-dashed p-6'>
+        <div className='flex flex-col items-center text-center'>
+          <BanIcon className='text-muted-foreground mx-auto mb-4 size-12 md:size-20' />
+          <h1 className='mb-4 text-lg font-bold md:text-3xl'>Accès refusé</h1>
+          {/* <p className='text-muted-foreground mb-6 text-sm md:text-base'>
+            La fonctionnalité &quot;{matchingRoute.name}&quot; indisponible
+          </p> */}
+          <p className='text-muted-foreground border-muted-foreground/10 w-fit rounded border border-dashed p-2 font-mono text-xs md:text-sm'>
+            <small>
+              Vous n&apos;avez pas les permissions nécessaires pour accéder à ce
+              module.
+            </small>
           </p>
-          <a
-            href={`/${firmSlug}/dashboard/overview`}
-            className='text-primary hover:underline'
-          >
-            Retour au tableau de bord
+
+          <a href={`/${firmSlug}/dashboard/overview`}>
+            <Button variant='outline' className='mt-4'>
+              Retour à l&apos;accueil
+            </Button>
           </a>
         </div>
       </div>
@@ -130,18 +144,24 @@ export default async function ModulePage({ params }: ModulePageProps) {
     !matchingRoute.requiredRole.includes(userRole)
   ) {
     return (
-      <div className='flex min-h-screen items-center justify-center'>
-        <div className='text-center'>
-          <h1 className='mb-4 text-3xl font-bold'>Accès refusé</h1>
-          <p className='text-muted-foreground mb-6'>
-            Vous n&apos;avez pas les permissions nécessaires pour accéder à
-            cette page.
+      <div className='border-muted-foreground/10 flex h-[calc(90vh-64px)] items-center justify-center rounded-lg border-2 border-dashed p-6'>
+        <div className='flex flex-col items-center text-center'>
+          <BanIcon className='text-muted-foreground mx-auto mb-4 size-12 md:size-20' />
+          <h1 className='mb-4 text-lg font-bold md:text-3xl'>Accès refusé</h1>
+          {/* <p className='text-muted-foreground mb-6 text-sm md:text-base'>
+              La fonctionnalité &quot;{matchingRoute.name}&quot; indisponible
+            </p> */}
+          <p className='text-muted-foreground border-muted-foreground/10 w-fit rounded border border-dashed p-2 font-mono text-xs md:text-sm'>
+            <small>
+              Erreur: Vous n&apos;avez pas les permissions nécessaires pour
+              accéder à cette page.
+            </small>
           </p>
-          <a
-            href={`/${firmSlug}/${moduleSlug}`}
-            className='text-primary hover:underline'
-          >
-            Retour au module
+
+          <a href={`/${firmSlug}/dashboard/overview`}>
+            <Button variant='outline' className='mt-4'>
+              Retour à l&apos;accueil
+            </Button>
           </a>
         </div>
       </div>
@@ -201,7 +221,9 @@ export default async function ModulePage({ params }: ModulePageProps) {
               La fonctionnalité &quot;{matchingRoute.name}&quot; indisponible
             </p> */}
             <p className='text-muted-foreground border-muted-foreground/10 w-fit rounded border border-dashed p-2 font-mono text-xs md:text-sm'>
-              <small>Chemin attendu: "src/modules/{modulePath}.tsx"</small>
+              <small>
+                Chemin attendu: &quot;src/modules/{modulePath}.tsx&quot;
+              </small>
             </p>
 
             <a href={`/${firmSlug}/dashboard/overview`}>

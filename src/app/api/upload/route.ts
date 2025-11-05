@@ -54,11 +54,8 @@ export async function POST(request: NextRequest) {
       compressionPercent: 85 // Compress images to 85% quality
     });
 
-    // Extract the URL string if fileUrl is an object
-    const urlString = typeof fileUrl === 'string' ? fileUrl : fileUrl.url;
-
     return NextResponse.json({
-      url: urlString,
+      url: fileUrl,
       success: true
     });
   } catch (error) {

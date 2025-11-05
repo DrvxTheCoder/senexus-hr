@@ -97,17 +97,17 @@ class ModuleRegistry {
    */
   async firmHasModule(firmId: string, moduleSlug: string): Promise<boolean> {
     try {
-      const module = await db.module.findUnique({
+      const moduleRecord = await db.module.findUnique({
         where: { slug: moduleSlug }
       });
 
-      if (!module) return false;
+      if (!moduleRecord) return false;
 
       const firmModule = await db.firmModule.findUnique({
         where: {
           firmId_moduleId: {
             firmId,
-            moduleId: module.id
+            moduleId: moduleRecord.id
           }
         }
       });
@@ -127,17 +127,17 @@ class ModuleRegistry {
     moduleSlug: string
   ): Promise<FirmModuleStatus | null> {
     try {
-      const module = await db.module.findUnique({
+      const moduleRecord = await db.module.findUnique({
         where: { slug: moduleSlug }
       });
 
-      if (!module) return null;
+      if (!moduleRecord) return null;
 
       const firmModule = await db.firmModule.findUnique({
         where: {
           firmId_moduleId: {
             firmId,
-            moduleId: module.id
+            moduleId: moduleRecord.id
           }
         }
       });
@@ -177,8 +177,8 @@ class ModuleRegistry {
       return cached;
     }
 
-    const module = this.modules.get(moduleSlug);
-    if (!module) {
+    const moduleConfig = this.modules.get(moduleSlug);
+    if (!moduleConfig) {
       return {
         moduleSlug,
         isHealthy: false,
@@ -188,7 +188,7 @@ class ModuleRegistry {
     }
 
     // If no health check endpoint, assume healthy
-    if (!module.healthCheck) {
+    if (!moduleConfig.healthCheck) {
       const status: ModuleHealthStatus = {
         moduleSlug,
         isHealthy: true,
@@ -202,10 +202,13 @@ class ModuleRegistry {
     // Perform health check
     const startTime = Date.now();
     try {
-      const response = await fetch(`${module.basePath}${module.healthCheck}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const response = await fetch(
+        `${moduleConfig.basePath}${moduleConfig.healthCheck}`,
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
 
       const responseTime = Date.now() - startTime;
       const isHealthy = response.ok;

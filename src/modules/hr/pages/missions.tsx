@@ -9,57 +9,57 @@ export default function MissionsPage() {
   const missions = [
     {
       id: '1',
-      title: 'Développement Application Mobile',
-      client: 'TechCorp SA',
-      employee: 'Marie Dubois',
+      title: 'Sécurité & Surveillance Site TOUBA GAZ',
+      client: 'TOUBA GAZ MBAO',
+      employee: 'Ousmane Ba',
       startDate: '2025-10-01',
       endDate: '2025-12-31',
       status: 'En cours',
-      budget: '€45,000',
+      budget: '100,000 FCFA',
       progress: 65
     },
     {
       id: '2',
-      title: 'Audit Sécurité Informatique',
-      client: 'SecureBank',
-      employee: 'Jean Martin',
+      title: 'Nettoyage & Entretien Bureaux',
+      client: 'SOCOCIM Industries',
+      employee: 'Aminata Diallo',
       startDate: '2025-11-01',
       endDate: '2025-11-30',
       status: 'En cours',
-      budget: '€28,000',
+      budget: '180,000 FCFA',
       progress: 30
     },
     {
       id: '3',
-      title: 'Migration Cloud AWS',
-      client: 'DataCorp',
-      employee: 'Sophie Laurent',
+      title: 'Transport & Logistique',
+      client: 'TOUBA GAZ MBAO',
+      employee: 'Mamadou Ndiaye',
       startDate: '2025-09-15',
       endDate: '2025-10-25',
       status: 'Terminé',
-      budget: '€52,000',
+      budget: '200,000 FCFA',
       progress: 100
     },
     {
       id: '4',
-      title: 'Formation React & Next.js',
-      client: 'DevAcademy',
-      employee: 'Pierre Durand',
+      title: 'Sécurité Incendie',
+      client: 'SOCOCIM Industries',
+      employee: 'Fatou Seck',
       startDate: '2025-11-15',
       endDate: '2025-12-15',
       status: 'Planifié',
-      budget: '€15,000',
+      budget: '100,000 FCFA',
       progress: 0
     },
     {
       id: '5',
-      title: 'Consultation Stratégie Digital',
-      client: 'MarketingPro',
-      employee: 'Claire Moreau',
+      title: 'Entretien & Hygiène Espaces',
+      client: 'TOUBA GAZ MBAO',
+      employee: 'Awa Thiam',
       startDate: '2025-10-20',
       endDate: '2025-11-20',
       status: 'En cours',
-      budget: '€22,000',
+      budget: '50,000 FCFA',
       progress: 45
     }
   ];
@@ -80,7 +80,7 @@ export default function MissionsPage() {
 
   const activeMissions = missions.filter((m) => m.status === 'En cours');
   const totalBudget = missions.reduce((sum, m) => {
-    const amount = parseInt(m.budget.replace(/[€,]/g, ''));
+    const amount = parseInt(m.budget.replace(/[FCFA,\s]/g, ''));
     return sum + amount;
   }, 0);
 
@@ -130,7 +130,7 @@ export default function MissionsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              €{totalBudget.toLocaleString()}
+              {totalBudget.toLocaleString()} FCFA
             </div>
           </CardContent>
         </Card>

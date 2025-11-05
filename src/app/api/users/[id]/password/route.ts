@@ -8,7 +8,7 @@ import * as bcrypt from 'bcryptjs';
 // PATCH /api/users/[id]/password - Change user password
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,6 +16,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await req.json();
     const validatedData = passwordChangeSchema.parse(body);
 
@@ -23,7 +24,7 @@ export async function PATCH(
     const passwordHash = await bcrypt.hash(validatedData.password, 10);
 
     const user = await db.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { passwordHash },
       select: {
         id: true,

@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const holdingId = searchParams.get('holdingId');
+    const slug = searchParams.get('slug');
 
     const firms = await db.firm.findMany({
-      where: holdingId ? { holdingId } : undefined,
+      where: holdingId ? { holdingId } : slug ? { slug } : undefined,
       include: {
         holding: {
           select: {

@@ -14,7 +14,7 @@ interface RouteParams {
 // PATCH /api/firms/[id]/modules/[moduleId] - Enable/disable or update module settings
 const updateModuleSchema = z.object({
   isEnabled: z.boolean().optional(),
-  settings: z.record(z.any()).optional()
+  settings: z.record(z.string(), z.any()).optional()
 });
 
 export async function PATCH(request: Request, { params }: RouteParams) {
@@ -60,7 +60,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.issues },
         { status: 400 }
       );
     }

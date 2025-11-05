@@ -244,25 +244,36 @@ enum EmployeeStatus {
 }
 
 model Employee {
-  id                  String         @id @default(cuid())
-  firmId              String
-  userId              String?
-  firstName           String
-  lastName            String
-  matricule           String
-  photoUrl            String?
-  departmentId        String?
-  assignedClientId    String?
-  assignmentStartDate DateTime?
-  status              EmployeeStatus @default(ACTIVE)
-  hireDate            DateTime
-  firstInterimDate    DateTime
-  phone               String?
-  email               String?
-  address             String?
-  emergencyContact    Json?
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  firmId           String
+  userId           String?
+  firstName        String
+  lastName         String
+  matricule        String
+  photoUrl         String?
+  departmentId     String?
+  assignedClientId String?
+  status           EmployeeStatus @default(ACTIVE)
+  hireDate         DateTime
+  phone            String?
+  email            String?
+  address          String?
+  emergencyContact Json?
+
+  // Additional personal information
+  dateOfBirth      DateTime?
+  placeOfBirth     String?
+  maritalStatus    String?
+  nationality      String?
+  cni              String?        // National ID number
+  fatherName       String?
+  motherName       String?
+  jobTitle         String?
+  category         String?
+  contractEndDate  DateTime?
+
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   firm                Firm                         @relation(fields: [firmId], references: [id], onDelete: Cascade)
   user                User?                        @relation(fields: [userId], references: [id])
