@@ -24,20 +24,22 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts           Account[]
-  sessions           Session[]
-  userFirms          UserFirm[]
-  employees          Employee[]
-  dashboards         DashboardView[]
-  auditLogs          AuditLog[]
-  uploadedFiles      FileObject[]
-  reviewedLeaves     LeaveRequest[]
-  recordedAbsences   Absence[]
-  approvedMissions   Mission[]
-  approvedPayslips   Payslip[]
-  generatedReports   ClientQuarterlyReport[]
-  requestedTransfers EmployeeTransfer[]      @relation("TransferRequester")
-  approvedTransfers  EmployeeTransfer[]      @relation("TransferApprover")
+  accounts              Account[]
+  sessions              Session[]
+  userFirms             UserFirm[]
+  employees             Employee[]
+  dashboards            DashboardView[]
+  auditLogs             AuditLog[]
+  uploadedFiles         FileObject[]
+  reviewedLeaves        LeaveRequest[]
+  recordedAbsences      Absence[]
+  approvedMissions      Mission[]
+  approvedPayslips      Payslip[]
+  generatedReports      ClientQuarterlyReport[]
+  requestedTransfers    EmployeeTransfer[]      @relation("TransferRequester")
+  approvedTransfers     EmployeeTransfer[]      @relation("TransferApprover")
+  uploadedDocuments     EmployeeDocument[]      @relation("DocumentUploader")
+  verifiedDocuments     EmployeeDocument[]      @relation("DocumentVerifier")
 
   @@map("users")
 }
@@ -119,29 +121,30 @@ model Firm {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  holding           Holding                 @relation(fields: [holdingId], references: [id], onDelete: Cascade)
-  userFirms         UserFirm[]
-  firmModules       FirmModule[]
-  departments       Department[]
-  employees         Employee[]
-  contracts         Contract[]
-  leaveRequests     LeaveRequest[]
-  missions          Mission[]
-  clients           Client[]
-  clientAssignments ClientFirmAssignment[]
-  clientReports     ClientQuarterlyReport[]
-  partners          Partner[]
-  partnerAgreements PartnerAgreement[]
-  benefitPlans      BenefitPlan[]
-  contributions     Contribution[]
-  claims            Claim[]
-  files             FileObject[]
-  dashboards        DashboardView[]
-  auditLogs         AuditLog[]
-  transfersOut      EmployeeTransfer[]      @relation("TransfersOut")
-  transfersIn       EmployeeTransfer[]      @relation("TransfersIn")
-  payrollConfig     PayrollConfig?
-  payslips          Payslip[]
+  holding              Holding                 @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  userFirms            UserFirm[]
+  firmModules          FirmModule[]
+  departments          Department[]
+  employees            Employee[]
+  contracts            Contract[]
+  clientFirmContracts  Contract[]              @relation("ClientFirmContracts")
+  leaveRequests        LeaveRequest[]
+  missions             Mission[]
+  clients              Client[]
+  clientAssignments    ClientFirmAssignment[]
+  clientReports        ClientQuarterlyReport[]
+  partners             Partner[]
+  partnerAgreements    PartnerAgreement[]
+  benefitPlans         BenefitPlan[]
+  contributions        Contribution[]
+  claims               Claim[]
+  files                FileObject[]
+  dashboards           DashboardView[]
+  auditLogs            AuditLog[]
+  transfersOut         EmployeeTransfer[]      @relation("TransfersOut")
+  transfersIn          EmployeeTransfer[]      @relation("TransfersIn")
+  payrollConfig        PayrollConfig?
+  payslips             Payslip[]
 
   @@map("firms")
 }
@@ -243,6 +246,12 @@ enum EmployeeStatus {
   ON_LEAVE
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model Employee {
   id               String         @id @default(cuid())
   firmId           String
@@ -263,6 +272,7 @@ model Employee {
   // Additional personal information
   dateOfBirth      DateTime?
   placeOfBirth     String?
+  gender           Gender?
   maritalStatus    String?
   nationality      String?
   cni              String?        // National ID number
@@ -271,6 +281,7 @@ model Employee {
   jobTitle         String?
   category         String?
   contractEndDate  DateTime?
+  netSalary        Decimal?       @db.Decimal(10, 2)
 
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -291,6 +302,7 @@ model Employee {
   coverageEnrollments EmployeeCoverageEnrollment[]
   contributions       Contribution[]
   claims              Claim[]
+  documents           EmployeeDocument[]
 
   @@unique([firmId, matricule])
   @@map("employees")
@@ -304,31 +316,44 @@ enum ContractType {
   PRESTATION
 }
 
+enum ContractStatus {
+  ACTIVE
+  EXPIRED      // Auto-marked when 2-year interim limit reached
+  TERMINATED   // Manually terminated before end date
+  RENEWED      // Previous contract that was renewed
+}
+
 model Contract {
-  id                String       @id @default(cuid())
+  id                String         @id @default(cuid())
   firmId            String
   employeeId        String
   clientId          String?
   type              ContractType
+  status            ContractStatus @default(ACTIVE)
   startDate         DateTime
   endDate           DateTime?
   renewalDate       DateTime?
-  alertThreshold    Int          @default(30)
-  isAutoRenewal     Boolean      @default(false)
+  renewedFromId     String?        // Reference to previous contract if renewed
+  clientFirmId      String?        // For interim: the client firm employee works at
+  alertThreshold    Int            @default(30)
+  isAutoRenewal     Boolean        @default(false)
   position          String?
-  salary            Decimal?     @db.Decimal(10, 2)
+  salary            Decimal?       @db.Decimal(10, 2)
   workingHours      Int?
   trialPeriodEnd    DateTime?
   notes             String?
-  isActive          Boolean      @default(true)
+  isActive          Boolean        @default(true)
   terminationDate   DateTime?
   terminationReason String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  firm     Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  client   Client?  @relation(fields: [clientId], references: [id])
+  firm         Firm       @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  employee     Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  client       Client?    @relation(fields: [clientId], references: [id])
+  renewedFrom  Contract?  @relation("ContractRenewal", fields: [renewedFromId], references: [id])
+  renewals     Contract[] @relation("ContractRenewal")
+  clientFirm   Firm?      @relation("ClientFirmContracts", fields: [clientFirmId], references: [id])
 
   @@map("contracts")
 }
@@ -861,6 +886,32 @@ model FileObject {
   uploader User @relation(fields: [uploadedBy], references: [id])
 
   @@map("file_objects")
+}
+
+model EmployeeDocument {
+  id           String       @id @default(cuid())
+  employeeId   String
+  firmId       String
+  documentType DocumentType
+  fileName     String
+  storageKey   String
+  fileUrl      String?
+  fileSize     Int?
+  mimeType     String?
+  uploadedBy   String
+  description  String?
+  expiryDate   DateTime?
+  isVerified   Boolean      @default(false)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  employee  Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  uploader  User     @relation("DocumentUploader", fields: [uploadedBy], references: [id])
+  verifier  User?    @relation("DocumentVerifier", fields: [verifiedBy], references: [id])
+
+  @@map("employee_documents")
 }
 
 // ============================================================================

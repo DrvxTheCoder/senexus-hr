@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +42,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Eye
 } from 'lucide-react';
 import {
   getEmployees,
@@ -55,13 +56,16 @@ import { ProfilePhotoUpload } from '@/components/profile-photo-upload';
 import { formatDateFR, formatDuration } from '../utils/date-utils';
 import { toast } from 'sonner';
 import { EmployeeBulkImport } from '../components/employee-bulk-import';
+import { EmployeeMultiStepForm } from '../components/employee-form';
 
 type Employee = any;
 type Client = any;
 
 export default function EmployeesPage() {
   const params = useParams();
+  const router = useRouter();
   const firmSlug = params.firmSlug as string;
+  const moduleSlug = params.moduleSlug as string;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -321,6 +325,16 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleSuccess = () => {
+    toast.success(
+      selectedEmployee
+        ? 'Employé mis à jour avec succès'
+        : 'Employé créé avec succès'
+    );
+    setIsDialogOpen(false);
+    fetchEmployees();
+  };
+
   const handleSubmit = async () => {
     if (!firmId) {
       toast.error('Firm ID manquant');
@@ -570,6 +584,18 @@ export default function EmployeesPage() {
                           <Button
                             variant='ghost'
                             size='sm'
+                            onClick={() =>
+                              router.push(
+                                `/${firmSlug}/${moduleSlug}/employees/${emp.id}`
+                              )
+                            }
+                          >
+                            <Eye className='mr-1 h-4 w-4' />
+                            Voir
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='sm'
                             onClick={() => handleEditEmployee(emp)}
                           >
                             Modifier
@@ -685,352 +711,12 @@ export default function EmployeesPage() {
       </Card>
 
       {/* Employee Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className='h-full max-h-[60vh] w-full max-w-[70vw] overflow-y-auto md:max-h-[90vh] md:max-w-[50vw]'>
-          <DialogHeader>
-            <DialogTitle>
-              {selectedEmployee ? "Modifier l'employé" : 'Nouvel employé'}
-            </DialogTitle>
-            <DialogDescription>
-              {selectedEmployee
-                ? "Modifier les informations de l'employé"
-                : 'Ajouter un nouvel employé intérimaire'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className='grid gap-4 py-4'>
-            {/* Profile Photo */}
-            <div className='space-y-2'>
-              <Label>Photo de profil</Label>
-              <ProfilePhotoUpload
-                value={formData.photoUrl}
-                onValueChange={(url) =>
-                  setFormData({ ...formData, photoUrl: url || '' })
-                }
-              />
-            </div>
-
-            {/* Personal Information */}
-            <div className='space-y-2'>
-              <h3 className='text-muted-foreground text-sm font-semibold'>
-                Informations personnelles
-              </h3>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='firstName'>Prénom *</Label>
-                  <Input
-                    id='firstName'
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    placeholder='Jean'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='lastName'>Nom *</Label>
-                  <Input
-                    id='lastName'
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
-                    }
-                    placeholder='Dupont'
-                  />
-                </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='matricule'>Matricule *</Label>
-                  <Input
-                    id='matricule'
-                    value={formData.matricule}
-                    onChange={(e) =>
-                      setFormData({ ...formData, matricule: e.target.value })
-                    }
-                    placeholder='EMP-2024-001'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='status'>Statut</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value as any })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='ACTIVE'>Actif</SelectItem>
-                      <SelectItem value='INACTIVE'>Inactif</SelectItem>
-                      <SelectItem value='ON_LEAVE'>En congé</SelectItem>
-                      <SelectItem value='SUSPENDED'>Suspendu</SelectItem>
-                      <SelectItem value='TERMINATED'>Terminé</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='email'>Email</Label>
-                  <Input
-                    id='email'
-                    type='email'
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder='jean.dupont@example.com'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='phone'>Téléphone</Label>
-                  <Input
-                    id='phone'
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    placeholder='+221 77 123 45 67'
-                  />
-                </div>
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='address'>Adresse</Label>
-                <Input
-                  id='address'
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder='123 Avenue de...'
-                />
-              </div>
-            </div>
-
-            {/* Additional Personal Info */}
-            <div className='space-y-2'>
-              <h3 className='text-muted-foreground text-sm font-semibold'>
-                Informations complémentaires
-              </h3>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='dateOfBirth'>Date de naissance</Label>
-                  <Input
-                    id='dateOfBirth'
-                    type='date'
-                    value={formData.dateOfBirth}
-                    onChange={(e) =>
-                      setFormData({ ...formData, dateOfBirth: e.target.value })
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='placeOfBirth'>Lieu de naissance</Label>
-                  <Input
-                    id='placeOfBirth'
-                    value={formData.placeOfBirth}
-                    onChange={(e) =>
-                      setFormData({ ...formData, placeOfBirth: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='nationality'>Nationalité</Label>
-                  <Input
-                    id='nationality'
-                    value={formData.nationality}
-                    onChange={(e) =>
-                      setFormData({ ...formData, nationality: e.target.value })
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='cni'>CNI</Label>
-                  <Input
-                    id='cni'
-                    value={formData.cni}
-                    onChange={(e) =>
-                      setFormData({ ...formData, cni: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='maritalStatus'>Situation matrimoniale</Label>
-                <Input
-                  id='maritalStatus'
-                  value={formData.maritalStatus}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maritalStatus: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Employment Information */}
-            <div className='space-y-2'>
-              <h3 className='text-muted-foreground text-sm font-semibold'>
-                Informations d&apos;emploi
-              </h3>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='hireDate'>Date d&apos;embauche *</Label>
-                  <Input
-                    id='hireDate'
-                    type='date'
-                    value={formData.hireDate}
-                    onChange={(e) =>
-                      setFormData({ ...formData, hireDate: e.target.value })
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='contractEndDate'>
-                    Date de fin de contrat
-                  </Label>
-                  <Input
-                    id='contractEndDate'
-                    type='date'
-                    value={formData.contractEndDate}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        contractEndDate: e.target.value
-                      })
-                    }
-                  />
-                </div>
-              </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='jobTitle'>Emploi</Label>
-                  <Input
-                    id='jobTitle'
-                    value={formData.jobTitle}
-                    onChange={(e) =>
-                      setFormData({ ...formData, jobTitle: e.target.value })
-                    }
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='category'>Catégorie</Label>
-                  <Input
-                    id='category'
-                    value={formData.category}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Assignment Information */}
-            <div className='space-y-2'>
-              <h3 className='text-muted-foreground text-sm font-semibold'>
-                Affectation
-              </h3>
-              <div className='space-y-2'>
-                <Label htmlFor='assignedClientId'>Client assigné</Label>
-                <Select
-                  value={formData.assignedClientId || undefined}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      assignedClientId: value === 'none' ? '' : value
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder='Sélectionner un client' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='none'>Aucun</SelectItem>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Emergency Contact */}
-            <div className='space-y-2'>
-              <h3 className='text-muted-foreground text-sm font-semibold'>
-                Contact d&apos;urgence
-              </h3>
-              <div className='grid grid-cols-3 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='emergencyContactName'>Nom</Label>
-                  <Input
-                    id='emergencyContactName'
-                    value={formData.emergencyContact.name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        emergencyContact: {
-                          ...formData.emergencyContact,
-                          name: e.target.value
-                        }
-                      })
-                    }
-                    placeholder='Marie Dupont'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='emergencyContactPhone'>Téléphone</Label>
-                  <Input
-                    id='emergencyContactPhone'
-                    value={formData.emergencyContact.phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        emergencyContact: {
-                          ...formData.emergencyContact,
-                          phone: e.target.value
-                        }
-                      })
-                    }
-                    placeholder='+221 77 987 65 43'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='emergencyContactRelationship'>Relation</Label>
-                  <Input
-                    id='emergencyContactRelationship'
-                    value={formData.emergencyContact.relationship}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        emergencyContact: {
-                          ...formData.emergencyContact,
-                          relationship: e.target.value
-                        }
-                      })
-                    }
-                    placeholder='Épouse'
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setIsDialogOpen(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleSubmit}>
-              {selectedEmployee ? 'Mettre à jour' : 'Créer'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      <EmployeeMultiStepForm
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        employee={selectedEmployee}
+        onSuccess={handleSuccess}
+      />
       {/* Bulk Import Dialog */}
       {firmId && (
         <EmployeeBulkImport

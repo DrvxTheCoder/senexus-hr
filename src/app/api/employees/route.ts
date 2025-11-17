@@ -87,7 +87,13 @@ export async function GET(req: NextRequest) {
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
     });
 
-    return NextResponse.json(employees);
+    // Convert Decimal fields to strings for JSON serialization
+    const serializedEmployees = employees.map((employee) => ({
+      ...employee,
+      netSalary: employee.netSalary?.toString() || null
+    }));
+
+    return NextResponse.json(serializedEmployees);
   } catch (error) {
     console.error('Error fetching employees:', error);
     return NextResponse.json(

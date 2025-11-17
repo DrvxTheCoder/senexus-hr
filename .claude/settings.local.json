@@ -4,7 +4,12 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npx prisma db push:*)",
       "Bash(npm install:*)",
-      "Bash(npx prisma studio)"
+      "Bash(npx prisma studio)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run dev:*)",
+      "Bash(perl:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []

@@ -2,27 +2,34 @@
 
 import { IconCamera, IconX } from '@tabler/icons-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Trash2 } from 'lucide-react';
 
-export interface ProfilePhotoUploadProps {
-  value?: string; // URL of the current photo
-  onValueChange?: (url: string | undefined) => void;
+export interface ProfilePhotoPreviewProps {
+  value?: string; // Existing photo URL (for edit mode)
+  onFileChange?: (file: File | null) => void;
   disabled?: boolean;
   className?: string;
 }
 
-export function ProfilePhotoUpload({
+export function ProfilePhotoPreview({
   value,
-  onValueChange,
+  onFileChange,
   disabled = false,
   className
-}: ProfilePhotoUploadProps) {
-  const [uploading, setUploading] = useState(false);
+}: ProfilePhotoPreviewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(value);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Update preview when value prop changes (for edit mode)
+  useEffect(() => {
+    if (value && !selectedFile) {
+      setPreviewUrl(value);
+    }
+  }, [value, selectedFile]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -40,45 +47,23 @@ export function ProfilePhotoUpload({
       return;
     }
 
-    setUploading(true);
+    // Create preview URL
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
+    setSelectedFile(file);
+    onFileChange?.(file);
 
-    try {
-      // Upload via API route (server-side Zipline upload)
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Échec du téléchargement');
-      }
-
-      const data = await response.json();
-      const url = data.url;
-
-      setPreviewUrl(url);
-      onValueChange?.(url);
-      toast.success('Photo téléchargée avec succès');
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Échec du téléchargement'
-      );
-    } finally {
-      setUploading(false);
-      // Reset input
-      e.target.value = '';
-    }
+    // Reset input
+    e.target.value = '';
   };
 
   const handleRemove = () => {
-    setPreviewUrl(undefined);
-    onValueChange?.(undefined);
-    toast.success('Photo retirée');
+    if (previewUrl && selectedFile) {
+      URL.revokeObjectURL(previewUrl);
+    }
+    setPreviewUrl(value); // Reset to original value if editing, or undefined if new
+    setSelectedFile(null);
+    onFileChange?.(null);
   };
 
   return (
@@ -99,12 +84,6 @@ export function ProfilePhotoUpload({
             <IconCamera className='size-8 text-gray-400' />
           </div>
         )}
-
-        {uploading && (
-          <div className='absolute inset-0 flex items-center justify-center rounded-full bg-black/50'>
-            <div className='size-6 animate-spin rounded-full border-2 border-white border-t-transparent' />
-          </div>
-        )}
       </div>
 
       {/* Upload/Remove Buttons */}
@@ -115,14 +94,14 @@ export function ProfilePhotoUpload({
               type='file'
               accept='image/*'
               onChange={handleFileSelect}
-              disabled={disabled || uploading}
+              disabled={disabled}
               className='hidden'
             />
             <Button
               type='button'
               variant='outline'
               size='sm'
-              disabled={disabled || uploading}
+              disabled={disabled}
               asChild
             >
               <span>
@@ -132,13 +111,13 @@ export function ProfilePhotoUpload({
             </Button>
           </label>
 
-          {previewUrl && (
+          {(previewUrl || selectedFile) && (
             <Button
               type='button'
               variant='ghost'
               size='icon'
               onClick={handleRemove}
-              disabled={disabled || uploading}
+              disabled={disabled}
             >
               <Trash2 className='size-4' />
             </Button>

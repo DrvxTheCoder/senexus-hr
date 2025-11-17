@@ -298,7 +298,7 @@ function FileCard({ file, progress, onRemove }: FileCardProps) {
           {progress ? <Progress value={progress} /> : null}
         </div>
       </div>
-      <div className='flex items-center gap-2'>
+      <div className='flex flex-row items-center gap-2'>
         <Button
           type='button'
           variant='ghost'
