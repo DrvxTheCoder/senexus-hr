@@ -28,10 +28,24 @@ import {
   PopoverContent,
   PopoverTrigger
 } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  AlertTriangle,
+  Loader2,
+  Check,
+  ChevronsUpDown
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList
+} from '@/components/ui/command';
 
 interface Employee {
   id: string;
@@ -77,6 +91,7 @@ export function ContractFormDialog({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [warning, setWarning] = React.useState<string | null>(null);
+  const [employeeComboOpen, setEmployeeComboOpen] = React.useState(false);
 
   const [formData, setFormData] = React.useState({
     employeeId: preSelectedEmployeeId || contract?.employeeId || '',
@@ -129,10 +144,10 @@ export function ContractFormDialog({
   const fetchEmployees = async () => {
     if (!firmId) return;
     try {
-      const res = await fetch(`/api/firms/${firmId}/employees`);
+      const res = await fetch(`/api/employees?firmId=${firmId}`);
       if (res.ok) {
         const data = await res.json();
-        setEmployees(data);
+        setEmployees(data.employees || data);
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -279,24 +294,61 @@ export function ContractFormDialog({
             {!preSelectedEmployeeId && !contract && (
               <div className='space-y-2'>
                 <Label htmlFor='employee'>Employé *</Label>
-                <Select
-                  value={formData.employeeId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, employeeId: value })
-                  }
-                  required
+                <Popover
+                  open={employeeComboOpen}
+                  onOpenChange={setEmployeeComboOpen}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder='Sélectionner un employé' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.firstName} {emp.lastName} ({emp.matricule})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      role='combobox'
+                      aria-expanded={employeeComboOpen}
+                      className='w-full justify-between'
+                    >
+                      {formData.employeeId
+                        ? employees.find(
+                            (emp) => emp.id === formData.employeeId
+                          )
+                          ? `${employees.find((emp) => emp.id === formData.employeeId)?.firstName} ${employees.find((emp) => emp.id === formData.employeeId)?.lastName} (${employees.find((emp) => emp.id === formData.employeeId)?.matricule})`
+                          : 'Sélectionner un employé'
+                        : 'Sélectionner un employé'}
+                      <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-full p-0'>
+                    <Command>
+                      <CommandInput placeholder='Rechercher un employé...' />
+                      <CommandList>
+                        <CommandEmpty>Aucun employé trouvé.</CommandEmpty>
+                        <CommandGroup>
+                          {employees.slice(0, 10).map((emp) => (
+                            <CommandItem
+                              key={emp.id}
+                              value={`${emp.firstName} ${emp.lastName} ${emp.matricule}`}
+                              onSelect={() => {
+                                setFormData({
+                                  ...formData,
+                                  employeeId: emp.id
+                                });
+                                setEmployeeComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  formData.employeeId === emp.id
+                                    ? 'opacity-100'
+                                    : 'opacity-0'
+                                )}
+                              />
+                              {emp.firstName} {emp.lastName} ({emp.matricule})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
@@ -314,19 +366,11 @@ export function ContractFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='CDI'>
-                    CDI - Contrat à Durée Indéterminée
-                  </SelectItem>
-                  <SelectItem value='CDD'>
-                    CDD - Contrat à Durée Déterminée
-                  </SelectItem>
-                  <SelectItem value='INTERIM'>
-                    INTERIM - Travail temporaire
-                  </SelectItem>
-                  <SelectItem value='STAGE'>STAGE - Stage</SelectItem>
-                  <SelectItem value='PRESTATION'>
-                    PRESTATION - Prestation de service
-                  </SelectItem>
+                  <SelectItem value='CDI'>CDI</SelectItem>
+                  <SelectItem value='CDD'>CDD</SelectItem>
+                  <SelectItem value='INTERIM'>INTERIM</SelectItem>
+                  <SelectItem value='STAGE'>STAGE</SelectItem>
+                  <SelectItem value='PRESTATION'>PRESTATION</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -477,18 +521,21 @@ export function ContractFormDialog({
 
             {/* Client (optional) */}
             <div className='space-y-2'>
-              <Label htmlFor='client'>Client (optionnel)</Label>
+              <Label htmlFor='client'>Client</Label>
               <Select
-                value={formData.clientId}
+                value={formData.clientId || 'NONE'}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, clientId: value })
+                  setFormData({
+                    ...formData,
+                    clientId: value === 'NONE' ? '' : value
+                  })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder='Aucun client' />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value=''>Aucun</SelectItem>
+                  <SelectItem value='NONE'>Aucun</SelectItem>
                   {clients.map((client) => (
                     <SelectItem key={client.id} value={client.id}>
                       {client.name}
@@ -498,23 +545,23 @@ export function ContractFormDialog({
               </Select>
             </div>
 
-            {/* Client Firm (for interim assignments) */}
+            {/* Client Firm (for interim assignments)
             {['INTERIM', 'PRESTATION'].includes(formData.type) && (
               <div className='space-y-2'>
                 <Label htmlFor='clientFirm'>
                   Entreprise cliente (optionnel)
                 </Label>
                 <Select
-                  value={formData.clientFirmId}
+                  value={formData.clientFirmId || 'NONE'}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, clientFirmId: value })
+                    setFormData({ ...formData, clientFirmId: value === 'NONE' ? '' : value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder='Aucune entreprise' />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value=''>Aucune</SelectItem>
+                    <SelectItem value='NONE'>Aucune</SelectItem>
                     {firms
                       .filter((f) => f.id !== firmId)
                       .map((firm) => (
@@ -525,7 +572,7 @@ export function ContractFormDialog({
                   </SelectContent>
                 </Select>
               </div>
-            )}
+            )} */}
 
             {/* Notes */}
             <div className='space-y-2'>

@@ -79,10 +79,6 @@ interface Contract {
     matricule: string;
     photoUrl: string | null;
   };
-  client: {
-    id: string;
-    name: string;
-  } | null;
   clientFirm: {
     id: string;
     name: string;
