@@ -1,10 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building2, Calendar, Briefcase } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Users,
+  Building2,
+  Calendar,
+  Briefcase,
+  ArrowRightLeft,
+  AlertCircle
+} from 'lucide-react';
 import { getEmployees } from '../actions/employee-actions';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface DashboardStats {
   totalEmployees: number;
@@ -13,9 +30,30 @@ interface DashboardStats {
   inactive: number;
 }
 
+interface PendingTransfer {
+  id: string;
+  transferDate: string;
+  effectiveDate: string;
+  reason: string;
+  status: string;
+  employee: {
+    firstName: string;
+    lastName: string;
+    matricule: string;
+  };
+  fromFirm: {
+    name: string;
+  };
+  toFirm: {
+    name: string;
+  };
+}
+
 export default function HRDashboard() {
   const params = useParams();
+  const router = useRouter();
   const firmSlug = params.firmSlug as string;
+  const moduleSlug = params.moduleSlug as string;
 
   const [stats, setStats] = useState<DashboardStats>({
     totalEmployees: 0,
@@ -23,7 +61,11 @@ export default function HRDashboard() {
     onLeave: 0,
     inactive: 0
   });
+  const [pendingTransfers, setPendingTransfers] = useState<PendingTransfer[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
+  const [firmId, setFirmId] = useState<string>('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -43,8 +85,13 @@ export default function HRDashboard() {
         return;
       }
 
+      setFirmId(firm.id);
+
       // Fetch employees
-      const employees = await getEmployees(firm.id);
+      const employeesResponse = await getEmployees(firm.id);
+      const employees = employeesResponse.success
+        ? employeesResponse.data || []
+        : [];
       const activeCount = employees.filter(
         (e: any) => e.status === 'ACTIVE'
       ).length;
@@ -61,6 +108,26 @@ export default function HRDashboard() {
         onLeave: onLeaveCount,
         inactive: inactiveCount
       });
+
+      // Fetch pending transfers (incoming to this firm)
+      try {
+        const transfersResponse = await fetch(
+          `/api/firms/${firm.id}/transfers?status=PENDING&direction=in`
+        );
+        if (transfersResponse.ok) {
+          const data = await transfersResponse.json();
+          setPendingTransfers(data.transfers || []);
+        } else {
+          console.error(
+            'Failed to fetch transfers:',
+            await transfersResponse.text()
+          );
+        }
+      } catch (err) {
+        console.error('Error fetching transfers:', err);
+        // Don't fail the whole dashboard if transfers fail
+        setPendingTransfers([]);
+      }
 
       setLoading(false);
     } catch (error) {
@@ -207,6 +274,84 @@ export default function HRDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Transfer Requests */}
+      {pendingTransfers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className='flex items-center justify-between'>
+              <div>
+                <CardTitle className='flex items-center gap-2'>
+                  <ArrowRightLeft className='h-5 w-5' />
+                  Demandes de transfert en attente
+                </CardTitle>
+                <CardDescription>
+                  {pendingTransfers.length} demande
+                  {pendingTransfers.length > 1 ? 's' : ''} à examiner
+                </CardDescription>
+              </div>
+              <Button
+                variant='outline'
+                onClick={() =>
+                  router.push(`/${firmSlug}/${moduleSlug}/transfers`)
+                }
+              >
+                Voir tout
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className='space-y-4'>
+              {pendingTransfers.slice(0, 3).map((transfer) => (
+                <div
+                  key={transfer.id}
+                  className='hover:bg-muted/50 flex items-center justify-between rounded-lg border p-4 transition-colors'
+                >
+                  <div className='flex-1 space-y-1'>
+                    <div className='flex items-center gap-2'>
+                      <p className='font-medium'>
+                        {transfer.employee.firstName}{' '}
+                        {transfer.employee.lastName}
+                      </p>
+                      <Badge variant='secondary' className='text-xs'>
+                        {transfer.employee.matricule}
+                      </Badge>
+                    </div>
+                    <p className='text-muted-foreground text-sm'>
+                      De{' '}
+                      <span className='font-medium'>
+                        {transfer.fromFirm.name}
+                      </span>
+                    </p>
+                    <p className='text-muted-foreground text-sm'>
+                      Date d&apos;effet:{' '}
+                      {format(new Date(transfer.effectiveDate), 'dd MMM yyyy', {
+                        locale: fr
+                      })}
+                    </p>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                    <Badge variant='outline' className='gap-1'>
+                      <AlertCircle className='h-3 w-3' />
+                      En attente
+                    </Badge>
+                    <Button
+                      size='sm'
+                      onClick={() =>
+                        router.push(
+                          `/${firmSlug}/${moduleSlug}/transfers?id=${transfer.id}`
+                        )
+                      }
+                    >
+                      Examiner
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

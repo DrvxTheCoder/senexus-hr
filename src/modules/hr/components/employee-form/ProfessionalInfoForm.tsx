@@ -24,6 +24,12 @@ interface Client {
   name: string;
 }
 
+interface Department {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export function ProfessionalInfoForm({
   formData,
   errors,
@@ -31,6 +37,7 @@ export function ProfessionalInfoForm({
   firmId
 }: ProfessionalInfoFormProps) {
   const [clients, setClients] = useState<Client[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   useEffect(() => {
     if (!firmId) return;
@@ -53,6 +60,26 @@ export function ProfessionalInfoForm({
       .catch((error) => {
         console.error('Error fetching clients:', error);
         setClients([]);
+      });
+
+    // Fetch departments
+    fetch(`/api/departments?firmId=${firmId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch departments');
+        return res.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDepartments(data);
+        } else if (data.data && Array.isArray(data.data)) {
+          setDepartments(data.data);
+        } else {
+          setDepartments([]);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching departments:', error);
+        setDepartments([]);
       });
   }, [firmId]);
 
@@ -166,16 +193,27 @@ export function ProfessionalInfoForm({
       {/* Row 3: Department, Assigned Client */}
       <div className='grid grid-cols-3 gap-4'>
         <div className='space-y-2'>
-          <Label htmlFor='departmentId'>
-            Département <span className='text-destructive'>*</span>
-          </Label>
-          <Input
-            id='departmentId'
-            value={formData.departmentId}
-            onChange={(e) => onChange('departmentId', e.target.value)}
-            placeholder='Ex: Ressources Humaines'
-            className={errors.departmentId ? 'border-destructive' : ''}
-          />
+          <Label htmlFor='departmentId'>Département</Label>
+          <Select
+            value={formData.departmentId || 'NONE'}
+            onValueChange={(value) =>
+              onChange('departmentId', value === 'NONE' ? '' : value)
+            }
+          >
+            <SelectTrigger
+              className={errors.departmentId ? 'border-destructive' : ''}
+            >
+              <SelectValue placeholder='Aucun' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='NONE'>Aucun</SelectItem>
+              {departments.map((dept) => (
+                <SelectItem key={dept.id} value={dept.id}>
+                  {dept.name} ({dept.code})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           {errors.departmentId && (
             <p className='text-destructive text-xs'>{errors.departmentId}</p>
           )}

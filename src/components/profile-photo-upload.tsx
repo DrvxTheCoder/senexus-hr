@@ -2,7 +2,7 @@
 
 import { IconCamera, IconX } from '@tabler/icons-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,11 @@ export function ProfilePhotoUpload({
 }: ProfilePhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>(value);
+
+  // Sync previewUrl with value prop changes
+  useEffect(() => {
+    setPreviewUrl(value);
+  }, [value]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

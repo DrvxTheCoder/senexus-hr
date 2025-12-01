@@ -17,6 +17,7 @@ import { PersonalInfoForm } from './PersonalInfoForm';
 import { ProfessionalInfoForm } from './ProfessionalInfoForm';
 import { EmployeeFormData, EmployeeFormErrors } from './types';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Step {
   id: number;
@@ -62,7 +63,7 @@ const professionalInfoSchema = z.object({
   netSalary: z.string().min(1, 'Salaire net requis'),
   hireDate: z.string().min(1, "Date d'embauche requise"),
   contractEndDate: z.string().optional(),
-  departmentId: z.string().min(1, 'Département requis'),
+  departmentId: z.string().optional(),
   assignedClientId: z.string().optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'ON_LEAVE', 'SUSPENDED', 'TERMINATED']),
   emergencyContact: z.object({
@@ -306,7 +307,7 @@ export function EmployeeMultiStepForm({
               {employee ? "Modifier l'employé" : 'Ajouter un employé'}
             </div>
             <Separator className='mb-2' />
-            <div className='flex-1 overflow-y-auto px-6 py-4'>
+            <ScrollArea className='h-[calc(100vh-200px)] flex-1 overflow-y-auto px-6'>
               <AnimatePresence mode='wait'>
                 {currentStep === 1 && (
                   <FormWrapper
@@ -337,7 +338,7 @@ export function EmployeeMultiStepForm({
                   </FormWrapper>
                 )}
               </AnimatePresence>
-            </div>
+            </ScrollArea>
 
             <div className='bg-muted/30 flex items-center justify-between border-t px-6 py-4'>
               <Button

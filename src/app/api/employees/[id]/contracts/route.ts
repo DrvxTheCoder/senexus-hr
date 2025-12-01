@@ -59,6 +59,14 @@ export async function GET(
         trialPeriodEnd: true,
         isActive: true,
         notes: true,
+        employeeId: true,
+        employee: {
+          select: {
+            firstName: true,
+            lastName: true,
+            matricule: true
+          }
+        },
         client: {
           select: {
             id: true,

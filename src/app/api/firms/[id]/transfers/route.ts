@@ -59,6 +59,10 @@ export async function GET(
         where,
         select: {
           id: true,
+          employeeId: true,
+          fromFirmId: true,
+          toFirmId: true,
+          clientId: true,
           transferDate: true,
           effectiveDate: true,
           reason: true,
@@ -67,6 +71,7 @@ export async function GET(
           rejectionReason: true,
           approvedAt: true,
           createdAt: true,
+          updatedAt: true,
           employee: {
             select: {
               id: true,

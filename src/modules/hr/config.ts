@@ -56,7 +56,7 @@ export const hrModuleConfig: ModuleConfig = {
       name: 'Transferts',
       icon: ArrowRightLeft,
       component: './pages/transfers',
-      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
+      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
     },
     {
       path: 'leaves',

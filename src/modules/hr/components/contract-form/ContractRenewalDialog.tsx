@@ -75,11 +75,16 @@ export function ContractRenewalDialog({
   });
 
   React.useEffect(() => {
-    if (open && contract) {
+    if (open && contract && firmSlug) {
       fetchFirmId();
+    }
+  }, [open, contract, firmSlug]);
+
+  React.useEffect(() => {
+    if (firmId && contract && open) {
       checkEligibility();
     }
-  }, [open, contract]);
+  }, [firmId, contract, open]);
 
   React.useEffect(() => {
     if (formData.startDate && formData.endDate) {
@@ -244,8 +249,8 @@ export function ContractRenewalDialog({
         <DialogHeader>
           <DialogTitle>Renouveler le contrat</DialogTitle>
           <DialogDescription>
-            Renouvellement du contrat de {contract.employee.firstName}{' '}
-            {contract.employee.lastName}
+            Renouvellement du contrat de {contract.employee?.firstName || ''}{' '}
+            {contract.employee?.lastName || ''}
           </DialogDescription>
         </DialogHeader>
 

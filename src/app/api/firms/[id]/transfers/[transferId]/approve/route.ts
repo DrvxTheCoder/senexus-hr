@@ -16,7 +16,17 @@ export async function POST(
 
     const { id: firmId, transferId } = await params;
     const id = transferId;
-    const body = await req.json();
+
+    // Parse body if provided (optional contract creation data)
+    let body: any = {};
+    try {
+      const text = await req.text();
+      if (text) {
+        body = JSON.parse(text);
+      }
+    } catch {
+      // No body or invalid JSON - that's okay, body is optional
+    }
 
     // Verify user has access to destination firm and proper role
     const userFirm = await db.userFirm.findUnique({
@@ -28,11 +38,11 @@ export async function POST(
       }
     });
 
-    if (!userFirm || !['OWNER', 'ADMIN'].includes(userFirm.role)) {
+    if (!userFirm || !['OWNER', 'ADMIN', 'MANAGER'].includes(userFirm.role)) {
       return NextResponse.json(
         {
           error:
-            'Only owners and admins of the destination firm can approve transfers'
+            'Only owners, admins, and managers of the destination firm can approve transfers'
         },
         { status: 403 }
       );

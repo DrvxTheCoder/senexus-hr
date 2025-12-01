@@ -27,8 +27,13 @@ export async function POST(
       }
     });
 
-    if (!userFirm || !['OWNER', 'ADMIN'].includes(userFirm.role)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (!userFirm || !['OWNER', 'ADMIN', 'MANAGER'].includes(userFirm.role)) {
+      return NextResponse.json(
+        {
+          error: 'Only owners, admins, and managers can complete transfers'
+        },
+        { status: 403 }
+      );
     }
 
     // Verify transfer exists and is approved

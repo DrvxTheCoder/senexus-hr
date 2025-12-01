@@ -233,9 +233,13 @@ export function EmployeeTransferDialog({
             <div className='space-y-2'>
               <Label htmlFor='toFirm'>Entreprise de destination *</Label>
               <Select
-                value={formData.toFirmId}
+                value={formData.toFirmId || 'NONE'}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, toFirmId: value, clientId: '' })
+                  setFormData({
+                    ...formData,
+                    toFirmId: value === 'NONE' ? '' : value,
+                    clientId: ''
+                  })
                 }
                 required
               >
@@ -244,7 +248,7 @@ export function EmployeeTransferDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {firms.length === 0 ? (
-                    <SelectItem value='' disabled>
+                    <SelectItem value='NONE' disabled>
                       Aucune entreprise avec module RH disponible
                     </SelectItem>
                   ) : (
@@ -263,16 +267,19 @@ export function EmployeeTransferDialog({
               <div className='space-y-2'>
                 <Label htmlFor='client'>Client assigné (optionnel)</Label>
                 <Select
-                  value={formData.clientId}
+                  value={formData.clientId || 'NONE'}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, clientId: value })
+                    setFormData({
+                      ...formData,
+                      clientId: value === 'NONE' ? '' : value
+                    })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder='Aucun client' />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value=''>Aucun</SelectItem>
+                    <SelectItem value='NONE'>Aucun</SelectItem>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name}

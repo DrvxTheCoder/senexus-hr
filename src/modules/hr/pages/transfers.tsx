@@ -41,13 +41,13 @@ interface EmployeeTransfer {
   fromFirmId: string;
   toFirmId: string;
   clientId: string | null;
+  transferDate: string;
   effectiveDate: string;
-  transferReason: string | null;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
-  requestedById: string;
-  approvedById: string | null;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
   approvedAt: string | null;
   rejectionReason: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
   employee: {
@@ -69,15 +69,15 @@ interface EmployeeTransfer {
     id: string;
     name: string;
   } | null;
-  requestedBy: {
+  requester: {
     id: string;
-    firstName: string;
-    lastName: string;
+    name: string;
+    email: string;
   };
-  approvedBy: {
+  approver: {
     id: string;
-    firstName: string;
-    lastName: string;
+    name: string;
+    email: string;
   } | null;
 }
 
@@ -133,12 +133,12 @@ export default function TransfersPage() {
     try {
       setIsLoading(true);
       const response = await fetch(`/api/firms/${firmId}/transfers`);
-      if (!response.ok) throw new Error('Failed to fetch transfers');
+      if (!response.ok) throw new Error('Échec du chargement des transferts');
       const data = await response.json();
       setTransfers(data.transfers || []);
     } catch (error) {
       console.error('Error fetching transfers:', error);
-      toast.error('Failed to load transfers');
+      toast.error('Échec du chargement des transferts');
     } finally {
       setIsLoading(false);
     }
@@ -189,21 +189,21 @@ export default function TransfersPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to approve transfer');
+        throw new Error(error.error || "Échec de l'approbation du transfert");
       }
 
-      toast.success('Transfer approved successfully');
+      toast.success('Transfert approuvé avec succès');
       fetchTransfers();
       setApproveDialogOpen(false);
       setSelectedTransfer(null);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to approve transfer');
+      toast.error(error.message || "Échec de l'approbation du transfert");
     }
   };
 
   const handleReject = async () => {
     if (!selectedTransfer || !rejectionReason.trim()) {
-      toast.error('Please provide a rejection reason');
+      toast.error('Veuillez fournir une raison de rejet');
       return;
     }
 
@@ -213,22 +213,22 @@ export default function TransfersPage() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rejectionReason })
+          body: JSON.stringify({ reason: rejectionReason })
         }
       );
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to reject transfer');
+        throw new Error(error.error || 'Échec du rejet du transfert');
       }
 
-      toast.success('Transfer rejected');
+      toast.success('Transfert rejeté avec succès');
       fetchTransfers();
       setRejectDialogOpen(false);
       setSelectedTransfer(null);
       setRejectionReason('');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to reject transfer');
+      toast.error(error.message || 'Échec du rejet du transfert');
     }
   };
 
@@ -246,15 +246,15 @@ export default function TransfersPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to complete transfer');
+        throw new Error(error.error || 'Échec de la finalisation du transfert');
       }
 
-      toast.success('Transfer completed successfully');
+      toast.success('Transfert finalisé avec succès');
       fetchTransfers();
       setCompleteDialogOpen(false);
       setSelectedTransfer(null);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to complete transfer');
+      toast.error(error.message || 'Échec de la finalisation du transfert');
     }
   };
 
@@ -403,12 +403,10 @@ export default function TransfersPage() {
                       </span>
                     </div>
 
-                    {transfer.transferReason && (
+                    {transfer.reason && (
                       <div className='text-sm'>
                         <span className='text-muted-foreground'>Raison: </span>
-                        <p className='mt-1 text-sm'>
-                          {transfer.transferReason}
-                        </p>
+                        <p className='mt-1 text-sm'>{transfer.reason}</p>
                       </div>
                     )}
 
@@ -424,62 +422,76 @@ export default function TransfersPage() {
                         </div>
                       )}
 
-                    {transfer.approvedBy && (
+                    {transfer.approver && (
                       <div className='text-muted-foreground text-xs'>
-                        Approuvé par {transfer.approvedBy.firstName}{' '}
-                        {transfer.approvedBy.lastName}
+                        Approuvé par {transfer.approver.name}
                         {transfer.approvedAt &&
                           ` le ${format(new Date(transfer.approvedAt), 'dd/MM/yyyy')}`}
                       </div>
                     )}
 
                     <div className='text-muted-foreground text-xs'>
-                      Demandé par {transfer.requestedBy.firstName}{' '}
-                      {transfer.requestedBy.lastName}
+                      Demandé par {transfer.requester.name}
                       {' le '}
                       {format(new Date(transfer.createdAt), 'dd/MM/yyyy')}
                     </div>
                   </CardContent>
-                  <CardFooter className='flex gap-2'>
-                    {canApprove(transfer) && (
-                      <Button
-                        size='sm'
-                        className='flex-1'
-                        onClick={() => {
-                          setSelectedTransfer(transfer);
-                          setApproveDialogOpen(true);
-                        }}
-                      >
-                        <CheckCircle2 className='mr-1 h-4 w-4' />
-                        Approuver
-                      </Button>
-                    )}
-                    {canReject(transfer) && (
-                      <Button
-                        size='sm'
-                        variant='outline'
-                        className='flex-1'
-                        onClick={() => {
-                          setSelectedTransfer(transfer);
-                          setRejectDialogOpen(true);
-                        }}
-                      >
-                        <XCircle className='mr-1 h-4 w-4' />
-                        Rejeter
-                      </Button>
-                    )}
-                    {canComplete(transfer) && (
-                      <Button
-                        size='sm'
-                        className='flex-1'
-                        onClick={() => {
-                          setSelectedTransfer(transfer);
-                          setCompleteDialogOpen(true);
-                        }}
-                      >
-                        Finaliser
-                      </Button>
-                    )}
+                  <CardFooter className='flex flex-col gap-2'>
+                    {transfer.status === 'PENDING' &&
+                      transfer.toFirmId !== firmId && (
+                        <p className='text-muted-foreground text-xs italic'>
+                          En attente d&apos;approbation par{' '}
+                          {transfer.toFirm.name}
+                        </p>
+                      )}
+                    {transfer.status === 'APPROVED' &&
+                      transfer.fromFirmId !== firmId && (
+                        <p className='text-muted-foreground text-xs italic'>
+                          En attente de finalisation par{' '}
+                          {transfer.fromFirm.name}
+                        </p>
+                      )}
+                    <div className='flex w-full gap-2'>
+                      {canApprove(transfer) && (
+                        <Button
+                          size='sm'
+                          className='flex-1'
+                          onClick={() => {
+                            setSelectedTransfer(transfer);
+                            setApproveDialogOpen(true);
+                          }}
+                        >
+                          <CheckCircle2 className='mr-1 h-4 w-4' />
+                          Approuver
+                        </Button>
+                      )}
+                      {canReject(transfer) && (
+                        <Button
+                          size='sm'
+                          variant='outline'
+                          className='flex-1'
+                          onClick={() => {
+                            setSelectedTransfer(transfer);
+                            setRejectDialogOpen(true);
+                          }}
+                        >
+                          <XCircle className='mr-1 h-4 w-4' />
+                          Rejeter
+                        </Button>
+                      )}
+                      {canComplete(transfer) && (
+                        <Button
+                          size='sm'
+                          className='flex-1'
+                          onClick={() => {
+                            setSelectedTransfer(transfer);
+                            setCompleteDialogOpen(true);
+                          }}
+                        >
+                          Finaliser
+                        </Button>
+                      )}
+                    </div>
                   </CardFooter>
                 </Card>
               ))}

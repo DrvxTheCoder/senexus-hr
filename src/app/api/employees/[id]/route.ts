@@ -28,6 +28,7 @@ export async function GET(
         photoUrl: true,
         status: true,
         hireDate: true,
+        contractEndDate: true,
         address: true,
         dateOfBirth: true,
         placeOfBirth: true,
@@ -40,7 +41,10 @@ export async function GET(
         jobTitle: true,
         category: true,
         netSalary: true,
+        emergencyContact: true,
         firmId: true,
+        departmentId: true,
+        assignedClientId: true,
         department: {
           select: {
             id: true,
@@ -108,6 +112,12 @@ export async function PUT(
     const { id } = await params;
     const body = await req.json();
 
+    console.log('[PUT /api/employees/:id] Updating employee:', id);
+    console.log(
+      '[PUT /api/employees/:id] Request body:',
+      JSON.stringify(body, null, 2)
+    );
+
     // First, verify the employee exists and user has access
     const existingEmployee = await db.employee.findUnique({
       where: { id },
@@ -134,34 +144,66 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Build update data object, only including defined fields
+    const updateData: any = {};
+
+    // Basic info
+    if (body.firstName !== undefined) updateData.firstName = body.firstName;
+    if (body.lastName !== undefined) updateData.lastName = body.lastName;
+    if (body.matricule !== undefined) updateData.matricule = body.matricule;
+    if (body.photoUrl !== undefined) updateData.photoUrl = body.photoUrl;
+    if (body.email !== undefined) updateData.email = body.email;
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.address !== undefined) updateData.address = body.address;
+
+    // Personal info
+    if (body.dateOfBirth !== undefined)
+      updateData.dateOfBirth = new Date(body.dateOfBirth);
+    if (body.placeOfBirth !== undefined)
+      updateData.placeOfBirth = body.placeOfBirth;
+    if (body.gender !== undefined) updateData.gender = body.gender;
+    if (body.maritalStatus !== undefined)
+      updateData.maritalStatus = body.maritalStatus;
+    if (body.nationality !== undefined)
+      updateData.nationality = body.nationality;
+    if (body.cni !== undefined) updateData.cni = body.cni;
+    if (body.fatherName !== undefined) updateData.fatherName = body.fatherName;
+    if (body.motherName !== undefined) updateData.motherName = body.motherName;
+
+    // Professional info
+    if (body.jobTitle !== undefined) updateData.jobTitle = body.jobTitle;
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.netSalary !== undefined) updateData.netSalary = body.netSalary;
+    if (body.hireDate !== undefined)
+      updateData.hireDate = new Date(body.hireDate);
+    if (body.contractEndDate !== undefined)
+      updateData.contractEndDate = new Date(body.contractEndDate);
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.departmentId !== undefined)
+      updateData.departmentId = body.departmentId;
+    if (body.assignedClientId !== undefined)
+      updateData.assignedClientId = body.assignedClientId;
+
+    // Emergency contact (JSON field)
+    if (body.emergencyContact !== undefined)
+      updateData.emergencyContact = body.emergencyContact;
+
+    console.log(
+      '[PUT /api/employees/:id] Update data:',
+      JSON.stringify(updateData, null, 2)
+    );
+
     // Update the employee
     const employee = await db.employee.update({
       where: { id },
-      data: {
-        firstName: body.firstName,
-        lastName: body.lastName,
-        email: body.email,
-        phone: body.phone,
-        address: body.address,
-        dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
-        placeOfBirth: body.placeOfBirth,
-        gender: body.gender,
-        maritalStatus: body.maritalStatus,
-        nationality: body.nationality,
-        cni: body.cni,
-        fatherName: body.fatherName,
-        motherName: body.motherName,
-        jobTitle: body.jobTitle,
-        category: body.category,
-        netSalary: body.netSalary,
-        departmentId: body.departmentId,
-        assignedClientId: body.assignedClientId
-      },
+      data: updateData,
       include: {
         department: true,
         assignedClient: true
       }
     });
+
+    console.log('[PUT /api/employees/:id] Employee updated successfully');
 
     // Convert Decimal fields to strings for JSON serialization
     const serialized = {

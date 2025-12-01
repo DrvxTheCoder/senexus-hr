@@ -39,7 +39,7 @@ export function FormWrapper({
 }: FormWrapperProps) {
   return (
     <motion.div
-      className='flex flex-col gap-6 pt-0'
+      className='flex flex-col gap-6 pt-0 pb-12'
       variants={formVariants}
       initial='hidden'
       animate='visible'

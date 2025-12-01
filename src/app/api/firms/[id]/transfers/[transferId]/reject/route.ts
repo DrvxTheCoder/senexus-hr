@@ -28,11 +28,11 @@ export async function POST(
       }
     });
 
-    if (!userFirm || !['OWNER', 'ADMIN'].includes(userFirm.role)) {
+    if (!userFirm || !['OWNER', 'ADMIN', 'MANAGER'].includes(userFirm.role)) {
       return NextResponse.json(
         {
           error:
-            'Only owners and admins of the destination firm can reject transfers'
+            'Only owners, admins, and managers of the destination firm can reject transfers'
         },
         { status: 403 }
       );

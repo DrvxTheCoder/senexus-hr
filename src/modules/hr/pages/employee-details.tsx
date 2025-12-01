@@ -164,9 +164,9 @@ export default function EmployeeDetailsPage() {
     setLoading(true);
     try {
       const [empRes, contractsRes, docsRes] = await Promise.all([
-        fetch(`/api/employees/${employeeId}`),
-        fetch(`/api/employees/${employeeId}/contracts`),
-        fetch(`/api/employees/${employeeId}/documents`)
+        fetch(`/api/employees/${employeeId}`, { cache: 'no-store' }),
+        fetch(`/api/employees/${employeeId}/contracts`, { cache: 'no-store' }),
+        fetch(`/api/employees/${employeeId}/documents`, { cache: 'no-store' })
       ]);
 
       if (empRes.ok) {
@@ -315,7 +315,7 @@ export default function EmployeeDetailsPage() {
           <Card className='w-full'>
             <CardContent className=''>
               <div className='flex flex-col items-start gap-6 md:flex-row md:items-center'>
-                <Avatar className='h-24 w-24'>
+                <Avatar className='h-24 w-24' key={employee.photoUrl}>
                   <AvatarImage
                     src={employee.photoUrl || ''}
                     alt={`${employee.firstName} ${employee.lastName}`}
@@ -394,7 +394,7 @@ export default function EmployeeDetailsPage() {
                 <CardHeader>
                   <CardTitle>Informations personnelles</CardTitle>
                   <CardDescription>
-                    Détails personnels et informations d'identité
+                    Détails personnels et informations d&apos;identité
                   </CardDescription>
                 </CardHeader>
                 <CardContent className='space-y-6'>
@@ -508,7 +508,7 @@ export default function EmployeeDetailsPage() {
                     </div>
                     <div className='space-y-2'>
                       <Label className='text-muted-foreground text-sm'>
-                        Date d'embauche
+                        Date d&apos;embauche
                       </Label>
                       <p className='font-medium'>
                         {employee.hireDate
@@ -541,122 +541,160 @@ export default function EmployeeDetailsPage() {
 
             {/* Contracts Tab */}
             <TabsContent value='contracts' className='space-y-4'>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between'>
-                  <div>
-                    <CardTitle>Contrats</CardTitle>
-                    <CardDescription>
-                      Liste des contrats de l'employé
-                    </CardDescription>
-                  </div>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <h3 className='text-lg font-semibold'>Contrats</h3>
+                  <p className='text-muted-foreground text-sm'>
+                    Liste des contrats de l'employé
+                  </p>
+                </div>
+                <div className='flex gap-2'>
+                  <Button
+                    variant='outline'
+                    onClick={() => setIsTransferDialogOpen(true)}
+                  >
+                    <ArrowRightLeft className='mr-2 h-4 w-4' />
+                    Transférer
+                  </Button>
                   <Button onClick={() => setIsContractDialogOpen(true)}>
                     <Plus className='mr-2 h-4 w-4' />
                     Nouveau contrat
                   </Button>
-                </CardHeader>
-                <CardContent>
-                  {contracts.length === 0 ? (
-                    <div className='text-muted-foreground py-8 text-center'>
-                      Aucun contrat enregistré
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Poste</TableHead>
-                          <TableHead>Client</TableHead>
-                          <TableHead>Date début</TableHead>
-                          <TableHead>Date fin</TableHead>
-                          <TableHead>Salaire</TableHead>
-                          <TableHead>Statut</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {contracts.map((contract) => (
-                          <TableRow key={contract.id}>
-                            <TableCell>
+                </div>
+              </div>
+
+              {contracts.length === 0 ? (
+                <Card>
+                  <CardContent className='text-muted-foreground py-12 text-center'>
+                    <FileText className='text-muted-foreground/50 mx-auto mb-4 h-12 w-12' />
+                    <p>Aucun contrat enregistré</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className='grid gap-4 md:grid-cols-2'>
+                  {contracts.map((contract) => (
+                    <Card key={contract.id} className='overflow-hidden'>
+                      <CardHeader className='bg-muted/50 pb-3'>
+                        <div className='flex items-start justify-between'>
+                          <div className='space-y-1'>
+                            <div className='flex items-center gap-2'>
                               {getContractTypeBadge(contract.type)}
-                            </TableCell>
-                            <TableCell>{contract.position || '-'}</TableCell>
-                            <TableCell>
+                              {getContractStatusBadge(contract.status)}
+                            </div>
+                            <CardTitle className='text-base'>
+                              {contract.position || 'Position non spécifiée'}
+                            </CardTitle>
+                            <CardDescription>
                               {contract.client?.name ||
                                 contract.clientFirm?.name ||
-                                '-'}
-                            </TableCell>
-                            <TableCell>
+                                'Client non assigné'}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className='pt-4'>
+                        <div className='space-y-3'>
+                          <div className='flex items-center justify-between text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-1'>
+                              <Calendar className='h-3.5 w-3.5' />
+                              Début
+                            </span>
+                            <span className='font-medium'>
                               {contract.startDate
                                 ? format(
                                     new Date(contract.startDate),
-                                    'dd/MM/yyyy'
+                                    'dd MMM yyyy',
+                                    {
+                                      locale: fr
+                                    }
                                   )
                                 : '-'}
-                            </TableCell>
-                            <TableCell>
+                            </span>
+                          </div>
+                          <div className='flex items-center justify-between text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-1'>
+                              <Calendar className='h-3.5 w-3.5' />
+                              Fin
+                            </span>
+                            <span className='font-medium'>
                               {contract.endDate
                                 ? format(
                                     new Date(contract.endDate),
-                                    'dd/MM/yyyy'
+                                    'dd MMM yyyy',
+                                    {
+                                      locale: fr
+                                    }
                                   )
                                 : 'Indéterminé'}
-                            </TableCell>
-                            <TableCell>
+                            </span>
+                          </div>
+                          <div className='flex items-center justify-between text-sm'>
+                            <span className='text-muted-foreground flex items-center gap-1'>
+                              <Briefcase className='h-3.5 w-3.5' />
+                              Salaire
+                            </span>
+                            <span className='font-medium'>
                               {contract.salary
                                 ? `${parseFloat(contract.salary).toLocaleString('fr-FR')} FCFA`
-                                : '-'}
-                            </TableCell>
-                            <TableCell>
-                              {getContractStatusBadge(contract.status)}
-                            </TableCell>
-                            <TableCell>
-                              <div className='flex items-center gap-2'>
-                                <Button variant='ghost' size='icon'>
-                                  <Eye className='h-4 w-4' />
-                                </Button>
-                                <Button
-                                  variant='ghost'
-                                  size='icon'
-                                  onClick={() => {
-                                    setSelectedContract(contract);
-                                    setIsContractDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className='h-4 w-4' />
-                                </Button>
-                                {contract.status === 'ACTIVE' && (
-                                  <>
-                                    <Button
-                                      variant='ghost'
-                                      size='icon'
-                                      onClick={() => {
-                                        setSelectedContract(contract);
-                                        setIsRenewDialogOpen(true);
-                                      }}
-                                    >
-                                      <RefreshCw className='h-4 w-4' />
-                                    </Button>
-                                    <Button
-                                      variant='ghost'
-                                      size='icon'
-                                      onClick={() => {
-                                        setSelectedContract(contract);
-                                        setIsTerminateDialogOpen(true);
-                                      }}
-                                    >
-                                      <XCircle className='text-destructive h-4 w-4' />
-                                    </Button>
-                                  </>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                                : 'Non spécifié'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className='mt-4 flex items-center gap-2 border-t pt-4'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='flex-1'
+                            onClick={() => {
+                              router.push(
+                                `/${firmSlug}/${moduleSlug}/contracts`
+                              );
+                            }}
+                          >
+                            <Eye className='mr-1 h-3.5 w-3.5' />
+                            Voir
+                          </Button>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => {
+                              setSelectedContract(contract);
+                              setIsContractDialogOpen(true);
+                            }}
+                          >
+                            <Edit className='h-3.5 w-3.5' />
+                          </Button>
+                          {contract.status === 'ACTIVE' && (
+                            <>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => {
+                                  setSelectedContract(contract);
+                                  setIsRenewDialogOpen(true);
+                                }}
+                              >
+                                <RefreshCw className='h-3.5 w-3.5' />
+                              </Button>
+                              <Button
+                                variant='outline'
+                                size='sm'
+                                onClick={() => {
+                                  setSelectedContract(contract);
+                                  setIsTerminateDialogOpen(true);
+                                }}
+                              >
+                                <XCircle className='text-destructive h-3.5 w-3.5' />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Documents Tab */}
@@ -696,7 +734,7 @@ export default function EmployeeDetailsPage() {
                             <SelectContent>
                               <SelectItem value='CV'>CV</SelectItem>
                               <SelectItem value='ID_CARD'>
-                                Carte d'identité
+                                Carte d&apos;identité
                               </SelectItem>
                               <SelectItem value='PASSPORT'>
                                 Passeport
@@ -751,7 +789,7 @@ export default function EmployeeDetailsPage() {
                           <TableHead>Type</TableHead>
                           <TableHead>Nom du fichier</TableHead>
                           <TableHead>Taille</TableHead>
-                          <TableHead>Date d'ajout</TableHead>
+                          <TableHead>Date d&apos;ajout</TableHead>
                           <TableHead>Expiration</TableHead>
                           <TableHead>Vérifié</TableHead>
                           <TableHead>Actions</TableHead>
@@ -811,19 +849,6 @@ export default function EmployeeDetailsPage() {
                   )}
                 </CardContent>
               </Card>
-              {contracts.some(
-                (c) => c.status === 'EXPIRED' || c.status === 'TERMINATED'
-              ) && (
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => setIsTransferDialogOpen(true)}
-                  className='mt-4'
-                >
-                  <ArrowRightLeft className='mr-2 h-4 w-4' />
-                  Transférer l'employé
-                </Button>
-              )}
             </TabsContent>
           </Tabs>
         </div>
@@ -841,7 +866,10 @@ export default function EmployeeDetailsPage() {
       {/* Contract Dialogs */}
       <ContractFormDialog
         open={isContractDialogOpen}
-        onOpenChange={setIsContractDialogOpen}
+        onOpenChange={(open) => {
+          setIsContractDialogOpen(open);
+          if (!open) setSelectedContract(null);
+        }}
         contract={selectedContract}
         employeeId={employeeId}
         onSuccess={() => {
@@ -852,7 +880,10 @@ export default function EmployeeDetailsPage() {
 
       <ContractRenewalDialog
         open={isRenewDialogOpen}
-        onOpenChange={setIsRenewDialogOpen}
+        onOpenChange={(open) => {
+          setIsRenewDialogOpen(open);
+          if (!open) setSelectedContract(null);
+        }}
         contract={selectedContract}
         onSuccess={() => {
           fetchEmployeeData();
@@ -862,7 +893,10 @@ export default function EmployeeDetailsPage() {
 
       <ContractTerminationDialog
         open={isTerminateDialogOpen}
-        onOpenChange={setIsTerminateDialogOpen}
+        onOpenChange={(open) => {
+          setIsTerminateDialogOpen(open);
+          if (!open) setSelectedContract(null);
+        }}
         contract={selectedContract}
         onSuccess={() => {
           fetchEmployeeData();

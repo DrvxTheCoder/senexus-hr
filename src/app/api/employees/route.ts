@@ -56,33 +56,10 @@ export async function GET(req: NextRequest) {
       where: {
         firmId
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        matricule: true,
-        email: true,
-        phone: true,
-        status: true,
-        hireDate: true,
-        photoUrl: true,
-        jobTitle: true,
-        departmentId: true,
-        assignedClientId: true,
-        createdAt: true,
-        updatedAt: true,
-        department: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        assignedClient: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
+      include: {
+        department: true,
+        assignedClient: true,
+        contracts: true
       },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }]
     });
@@ -90,7 +67,11 @@ export async function GET(req: NextRequest) {
     // Convert Decimal fields to strings for JSON serialization
     const serializedEmployees = employees.map((employee) => ({
       ...employee,
-      netSalary: employee.netSalary?.toString() || null
+      netSalary: employee.netSalary?.toString() || null,
+      contracts: employee.contracts.map((contract) => ({
+        ...contract,
+        salary: contract.salary?.toString() || null
+      }))
     }));
 
     return NextResponse.json(serializedEmployees);

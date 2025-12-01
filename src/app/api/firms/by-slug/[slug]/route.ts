@@ -22,7 +22,8 @@ export async function GET(
         name: true,
         slug: true,
         logo: true,
-        themeColor: true
+        themeColor: true,
+        holdingId: true
       }
     });
 
