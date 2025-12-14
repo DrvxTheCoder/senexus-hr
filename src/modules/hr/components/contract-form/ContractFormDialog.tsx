@@ -129,6 +129,46 @@ export function ContractFormDialog({
     validateContractDuration();
   }, [formData.type, formData.startDate, formData.endDate]);
 
+  // Update form data when contract prop changes (for edit mode)
+  React.useEffect(() => {
+    if (open && contract) {
+      setFormData({
+        employeeId: contract.employeeId || '',
+        type: contract.type || 'CDD',
+        startDate: contract.startDate
+          ? new Date(contract.startDate)
+          : new Date(),
+        endDate: contract.endDate ? new Date(contract.endDate) : null,
+        position: contract.position || '',
+        salary: contract.salary ? contract.salary.toString() : '',
+        workingHours: contract.workingHours
+          ? contract.workingHours.toString()
+          : '',
+        trialPeriodEnd: contract.trialPeriodEnd
+          ? new Date(contract.trialPeriodEnd)
+          : null,
+        clientId: contract.clientId || '',
+        clientFirmId: contract.clientFirmId || '',
+        notes: contract.notes || ''
+      });
+    } else if (open && !contract && preSelectedEmployeeId) {
+      // Reset form for new contract with pre-selected employee
+      setFormData({
+        employeeId: preSelectedEmployeeId,
+        type: 'CDD',
+        startDate: new Date(),
+        endDate: null,
+        position: '',
+        salary: '',
+        workingHours: '',
+        trialPeriodEnd: null,
+        clientId: '',
+        clientFirmId: '',
+        notes: ''
+      });
+    }
+  }, [open, contract, preSelectedEmployeeId]);
+
   const fetchFirmId = async () => {
     try {
       const res = await fetch(`/api/firms/by-slug/${firmSlug}`);

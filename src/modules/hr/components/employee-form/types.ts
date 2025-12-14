@@ -25,6 +25,11 @@ export interface EmployeeFormData {
   departmentId: string;
   assignedClientId: string;
   status: 'ACTIVE' | 'INACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
+
+  // Contract Info
+  contractType?: string;
+  workingHours?: string;
+
   emergencyContact: {
     name: string;
     phone: string;

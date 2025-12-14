@@ -26,11 +26,13 @@ import {
   AlertTriangle,
   Loader2,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRightLeft
 } from 'lucide-react';
 import { format, differenceInMonths, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { EmployeeTransferDialog } from './EmployeeTransferDialog';
 
 interface Contract {
   id: string;
@@ -66,6 +68,7 @@ export function ContractRenewalDialog({
   const [error, setError] = React.useState<string | null>(null);
   const [eligibilityInfo, setEligibilityInfo] = React.useState<any>(null);
   const [isEligible, setIsEligible] = React.useState(true);
+  const [showTransferDialog, setShowTransferDialog] = React.useState(false);
 
   const [formData, setFormData] = React.useState({
     startDate: contract?.endDate ? new Date(contract.endDate) : new Date(),
@@ -140,14 +143,25 @@ export function ContractRenewalDialog({
             }
           }
 
-          const totalDurationMonths = totalDurationDays / 30;
-          const remainingMonths = 24 - totalDurationMonths;
+          const totalMonths = Math.floor(totalDurationDays / 30);
+          const totalDays = totalDurationDays % 30;
+
+          const maxDurationDays = 24 * 30; // 24 months in days
+          const remainingDays = Math.max(
+            0,
+            maxDurationDays - totalDurationDays
+          );
+          const remainingMonths = Math.floor(remainingDays / 30);
+          const remainingDaysOnly = remainingDays % 30;
 
           setEligibilityInfo({
             currentDuration,
-            totalDurationMonths: totalDurationMonths.toFixed(1),
-            remainingMonths: remainingMonths.toFixed(1),
-            maxRenewalMonths: Math.floor(remainingMonths)
+            totalDurationDays,
+            totalMonths,
+            totalDays,
+            remainingMonths,
+            remainingDays: remainingDaysOnly,
+            maxRenewalMonths: remainingMonths
           });
 
           // Check if eligible
@@ -156,7 +170,7 @@ export function ContractRenewalDialog({
             setError(
               'Ce contrat ne peut pas être renouvelé car sa durée initiale dépasse 12 mois.'
             );
-          } else if (remainingMonths <= 0) {
+          } else if (remainingDays <= 0) {
             setIsEligible(false);
             setError(
               "La limite de 24 mois cumulés a été atteinte. L'employé doit être transféré vers une autre entreprise."
@@ -266,15 +280,21 @@ export function ContractRenewalDialog({
                       <strong>Durée du contrat actuel:</strong>{' '}
                       {eligibilityInfo.currentDuration} mois
                     </p>
-                    {eligibilityInfo.totalDurationMonths && (
+                    {eligibilityInfo.totalMonths !== undefined && (
                       <>
                         <p>
                           <strong>Durée cumulée:</strong>{' '}
-                          {eligibilityInfo.totalDurationMonths} mois / 24 mois
+                          {eligibilityInfo.totalMonths} mois{' '}
+                          {eligibilityInfo.totalDays > 0 &&
+                            `${eligibilityInfo.totalDays} jours`}
+                          {' / 24 mois'}
                         </p>
                         <p>
                           <strong>Durée restante autorisée:</strong>{' '}
-                          {eligibilityInfo.remainingMonths} mois
+                          {eligibilityInfo.remainingMonths === 0 &&
+                          eligibilityInfo.remainingDays === 0
+                            ? '0 mois'
+                            : `${eligibilityInfo.remainingMonths} mois${eligibilityInfo.remainingDays > 0 ? ` ${eligibilityInfo.remainingDays} jours` : ''}`}
                         </p>
                       </>
                     )}
@@ -286,7 +306,25 @@ export function ContractRenewalDialog({
             {error && !isEligible && (
               <Alert variant='destructive'>
                 <AlertTriangle className='h-4 w-4' />
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription>
+                  <p className='mb-3'>{error}</p>
+                  {eligibilityInfo?.remainingMonths === 0 &&
+                    eligibilityInfo?.remainingDays === 0 && (
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {
+                          setShowTransferDialog(true);
+                          onOpenChange(false);
+                        }}
+                        className='w-full'
+                      >
+                        <ArrowRightLeft className='mr-2 h-4 w-4' />
+                        Transférer l&apos;employé vers une autre entreprise
+                      </Button>
+                    )}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -413,6 +451,15 @@ export function ContractRenewalDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {contract && (
+        <EmployeeTransferDialog
+          open={showTransferDialog}
+          onOpenChange={setShowTransferDialog}
+          employeeId={contract.employeeId}
+          onSuccess={onSuccess}
+        />
+      )}
     </Dialog>
   );
 }

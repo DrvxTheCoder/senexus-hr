@@ -190,7 +190,7 @@ export function ProfessionalInfoForm({
         </div>
       </div>
 
-      {/* Row 3: Department, Assigned Client */}
+      {/* Row 3: Department, Assigned Client, Contract Type */}
       <div className='grid grid-cols-3 gap-4'>
         <div className='space-y-2'>
           <Label htmlFor='departmentId'>Département</Label>
@@ -222,13 +222,16 @@ export function ProfessionalInfoForm({
         <div className='space-y-2'>
           <Label htmlFor='assignedClientId'>Client assigné</Label>
           <Select
-            value={formData.assignedClientId || undefined}
-            onValueChange={(value) => onChange('assignedClientId', value)}
+            value={formData.assignedClientId || 'NONE'}
+            onValueChange={(value) =>
+              onChange('assignedClientId', value === 'NONE' ? '' : value)
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder='Aucun' />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value='NONE'>Aucun</SelectItem>
               {clients.map((client) => (
                 <SelectItem key={client.id} value={client.id}>
                   {client.name}
@@ -236,6 +239,46 @@ export function ProfessionalInfoForm({
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className='space-y-2'>
+          <Label htmlFor='contractType'>
+            Type de contrat <span className='text-destructive'>*</span>
+          </Label>
+          <Select
+            value={formData.contractType || 'CDD'}
+            onValueChange={(value) => onChange('contractType', value)}
+          >
+            <SelectTrigger
+              className={errors.contractType ? 'border-destructive' : ''}
+            >
+              <SelectValue placeholder='Sélectionner' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='CDD'>CDD</SelectItem>
+              <SelectItem value='CDI'>CDI</SelectItem>
+              <SelectItem value='INTERIM'>Intérim</SelectItem>
+              <SelectItem value='PRESTATION'>Prestation</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.contractType && (
+            <p className='text-destructive text-xs'>{errors.contractType}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Row 4: Working Hours */}
+      <div className='grid grid-cols-3 gap-4'>
+        <div className='space-y-2'>
+          <Label htmlFor='workingHours'>Heures de travail (par semaine)</Label>
+          <Input
+            id='workingHours'
+            type='number'
+            step='0.5'
+            placeholder='40'
+            value={formData.workingHours || ''}
+            onChange={(e) => onChange('workingHours', e.target.value)}
+          />
         </div>
       </div>
 

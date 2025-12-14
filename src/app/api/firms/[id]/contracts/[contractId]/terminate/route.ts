@@ -95,7 +95,14 @@ export async function POST(
       }
     });
 
-    return NextResponse.json(contract);
+    // Convert Decimal fields to strings for JSON serialization
+    const serialized = {
+      ...contract,
+      salary: contract.salary?.toString() || null,
+      workingHours: contract.workingHours?.toString() || null
+    };
+
+    return NextResponse.json(serialized);
   } catch (error) {
     console.error('Error terminating contract:', error);
     return NextResponse.json(

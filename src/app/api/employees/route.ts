@@ -83,3 +83,156 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+// POST /api/employees - Create a new employee with initial contract
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { firmId, ...employeeData } = body;
+
+    if (!firmId) {
+      return NextResponse.json(
+        { error: 'Firm ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Verify user has access to this firm with proper role
+    const userFirm = await db.userFirm.findUnique({
+      where: {
+        userId_firmId: {
+          userId: session.user.id,
+          firmId
+        }
+      }
+    });
+
+    if (!userFirm || !['OWNER', 'ADMIN', 'MANAGER'].includes(userFirm.role)) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    // Check if matricule already exists for this firm
+    if (employeeData.matricule) {
+      const existingEmployee = await db.employee.findUnique({
+        where: {
+          firmId_matricule: {
+            firmId,
+            matricule: employeeData.matricule
+          }
+        }
+      });
+
+      if (existingEmployee) {
+        return NextResponse.json(
+          { error: 'Matricule already exists' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create employee and contract in a transaction
+    const result = await db.$transaction(async (tx) => {
+      // Create employee
+      const employee = await tx.employee.create({
+        data: {
+          firmId,
+          firstName: employeeData.firstName,
+          lastName: employeeData.lastName,
+          matricule: employeeData.matricule,
+          email: employeeData.email,
+          phone: employeeData.phone,
+          address: employeeData.address,
+          dateOfBirth: employeeData.dateOfBirth
+            ? new Date(employeeData.dateOfBirth)
+            : null,
+          placeOfBirth: employeeData.placeOfBirth,
+          gender: employeeData.gender,
+          maritalStatus: employeeData.maritalStatus,
+          nationality: employeeData.nationality,
+          cni: employeeData.cni,
+          fatherName: employeeData.fatherName,
+          motherName: employeeData.motherName,
+          photoUrl: employeeData.photoUrl,
+          jobTitle: employeeData.jobTitle,
+          category: employeeData.category,
+          netSalary: employeeData.netSalary,
+          hireDate: employeeData.hireDate
+            ? new Date(employeeData.hireDate)
+            : new Date(),
+          contractEndDate: employeeData.contractEndDate
+            ? new Date(employeeData.contractEndDate)
+            : null,
+          departmentId: employeeData.departmentId || null,
+          assignedClientId: employeeData.assignedClientId || null,
+          status: employeeData.status || 'ACTIVE',
+          emergencyContact: employeeData.emergencyContact || null
+        }
+      });
+
+      // Create initial contract
+      const contract = await tx.contract.create({
+        data: {
+          firmId,
+          employeeId: employee.id,
+          clientId: employeeData.assignedClientId || null,
+          type: employeeData.contractType || 'CDD',
+          status: 'ACTIVE',
+          startDate: employeeData.hireDate
+            ? new Date(employeeData.hireDate)
+            : new Date(),
+          endDate: employeeData.contractEndDate
+            ? new Date(employeeData.contractEndDate)
+            : null,
+          position: employeeData.jobTitle || null,
+          salary: employeeData.netSalary || null,
+          workingHours: employeeData.workingHours || null,
+          notes: `Initial contract created during employee onboarding`
+        }
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          firmId,
+          actorId: session.user.id,
+          action: 'CREATE',
+          entity: 'EMPLOYEE',
+          entityId: employee.id,
+          metadata: {
+            employeeName: `${employee.firstName} ${employee.lastName}`,
+            matricule: employee.matricule,
+            contractId: contract.id
+          }
+        }
+      });
+
+      return { employee, contract };
+    });
+
+    // Convert Decimal fields for response
+    const response = {
+      ...result.employee,
+      netSalary: result.employee.netSalary?.toString() || null,
+      contract: {
+        ...result.contract,
+        salary: result.contract.salary?.toString() || null
+      }
+    };
+
+    return NextResponse.json(response, { status: 201 });
+  } catch (error) {
+    console.error('Error creating employee:', error);
+    return NextResponse.json(
+      { error: 'Failed to create employee' },
+      { status: 500 }
+    );
+  }
+}

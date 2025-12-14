@@ -256,7 +256,14 @@ export async function POST(
       }
     });
 
-    return NextResponse.json(contract, { status: 201 });
+    // Convert Decimal fields to strings for JSON serialization
+    const serialized = {
+      ...contract,
+      salary: contract.salary?.toString() || null,
+      workingHours: contract.workingHours?.toString() || null
+    };
+
+    return NextResponse.json(serialized, { status: 201 });
   } catch (error) {
     console.error('Error creating contract:', error);
     return NextResponse.json(
