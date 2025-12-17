@@ -28,7 +28,7 @@ export interface EmployeeFormData {
 
   // Contract Info
   contractType?: string;
-  workingHours?: string;
+  workingHours?: number;
 
   emergencyContact: {
     name: string;

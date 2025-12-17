@@ -24,7 +24,7 @@ export function PersonalInfoForm({
   onChange
 }: PersonalInfoFormProps) {
   return (
-    <div className='space-y-3'>
+    <div className='space-y-3 px-1'>
       {/* Profile Photo */}
       <div className='flex pb-3'>
         <ProfilePhotoUpload

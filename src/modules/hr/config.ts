@@ -65,41 +65,41 @@ export const hrModuleConfig: ModuleConfig = {
       component: './pages/leaves',
       requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
     },
-    {
-      path: 'absences',
-      name: 'Absences',
-      icon: UserX,
-      component: './pages/absences',
-      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
-    },
-    {
-      path: 'missions',
-      name: 'Missions',
-      icon: Briefcase,
-      component: './pages/missions',
-      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
-    },
+    // {
+    //   path: 'absences',
+    //   name: 'Absences',
+    //   icon: UserX,
+    //   component: './pages/absences',
+    //   requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
+    // },
+    // {
+    //   path: 'missions',
+    //   name: 'Missions',
+    //   icon: Briefcase,
+    //   component: './pages/missions',
+    //   requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
+    // },
     {
       path: 'documents',
       name: 'Documents',
       icon: FolderOpen,
       component: './pages/documents',
       requiredRole: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER]
-    },
-    {
-      path: 'payroll',
-      name: 'Paie',
-      icon: DollarSign,
-      component: './pages/payroll',
-      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
-    },
-    {
-      path: 'departments',
-      name: 'Départements',
-      icon: Building2,
-      component: './pages/departments',
-      requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
     }
+    // {
+    //   path: 'payroll',
+    //   name: 'Paie',
+    //   icon: DollarSign,
+    //   component: './pages/payroll',
+    //   requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
+    // },
+    // {
+    //   path: 'departments',
+    //   name: 'Départements',
+    //   icon: Building2,
+    //   component: './pages/departments',
+    //   requiredRole: [FirmRole.OWNER, FirmRole.ADMIN]
+    // }
   ],
   metadata: {
     color: '#3b82f6',

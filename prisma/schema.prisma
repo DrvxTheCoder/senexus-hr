@@ -900,6 +900,8 @@ model EmployeeDocument {
   mimeType     String?
   uploadedBy   String
   description  String?
+  tags         String[]     @default([])
+  metadata     Json?
   expiryDate   DateTime?
   isVerified   Boolean      @default(false)
   verifiedBy   String?

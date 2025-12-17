@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth.config';
 import { db } from '@/lib/db';
+import { fr } from 'zod/v4/locales';
+import { locales } from 'zod';
 
 // POST /api/firms/:id/transfers/:id/complete - Complete the transfer (move employee)
 export async function POST(
@@ -65,7 +67,9 @@ export async function POST(
     // Check if effective date has been reached
     if (new Date(existingTransfer.effectiveDate) > new Date()) {
       return NextResponse.json(
-        { error: 'Cannot complete transfer before effective date' },
+        {
+          error: `Impossible de compléter le transfert avant la date effective : ${existingTransfer.effectiveDate.toLocaleDateString()}`
+        },
         { status: 400 }
       );
     }

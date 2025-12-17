@@ -84,7 +84,7 @@ export function ProfessionalInfoForm({
   }, [firmId]);
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 px-1'>
       {/* Row 1: Job Title, Category, Net Salary */}
       <div className='grid grid-cols-3 gap-4'>
         <div className='space-y-2'>

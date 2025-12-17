@@ -21,25 +21,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger
-} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft,
   User,
@@ -75,6 +57,9 @@ import {
   ContractTerminationDialog,
   EmployeeTransferDialog
 } from '../components/contract-form';
+import { DocumentUploadDialog } from '../components/document-form/DocumentUploadDialog';
+import { DocumentPreviewModal } from '../components/documents/DocumentPreviewModal';
+import { toast } from 'sonner';
 
 interface Employee {
   id: string;
@@ -122,12 +107,16 @@ interface Document {
   id: string;
   documentType: string;
   fileName: string;
-  fileUrl: string | null;
+  fileUrl: string;
+  storageKey: string;
   fileSize: number | null;
+  mimeType: string;
   uploadedBy: string;
   createdAt: string;
   expiryDate: string | null;
   isVerified: boolean;
+  description: string | null;
+  tags: string[];
 }
 
 export default function EmployeeDetailsPage() {
@@ -144,6 +133,7 @@ export default function EmployeeDetailsPage() {
   const [activeTab, setActiveTab] = React.useState('info');
   const [isUploadDialogOpen, setIsUploadDialogOpen] = React.useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [firmId, setFirmId] = React.useState<string>('');
 
   // Contract dialog states
   const [isContractDialogOpen, setIsContractDialogOpen] = React.useState(false);
@@ -154,11 +144,37 @@ export default function EmployeeDetailsPage() {
   const [selectedContract, setSelectedContract] =
     React.useState<Contract | null>(null);
 
+  // Document preview and pagination states
+  const [previewDocument, setPreviewDocument] = React.useState<Document | null>(
+    null
+  );
+  const [showPreview, setShowPreview] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const documentsPerPage = 5;
+
+  React.useEffect(() => {
+    if (firmSlug) {
+      fetchFirmId();
+    }
+  }, [firmSlug]);
+
   React.useEffect(() => {
     if (employeeId) {
       fetchEmployeeData();
     }
   }, [employeeId]);
+
+  const fetchFirmId = async () => {
+    try {
+      const res = await fetch(`/api/firms/by-slug/${firmSlug}`);
+      if (res.ok) {
+        const data = await res.json();
+        setFirmId(data.id);
+      }
+    } catch (error) {
+      console.error('Error fetching firm:', error);
+    }
+  };
 
   const fetchEmployeeData = async () => {
     setLoading(true);
@@ -251,6 +267,35 @@ export default function EmployeeDetailsPage() {
         return <FolderOpen className='h-4 w-4' />;
       default:
         return <FileText className='h-4 w-4' />;
+    }
+  };
+
+  // Pagination logic
+  const indexOfLastDocument = currentPage * documentsPerPage;
+  const indexOfFirstDocument = indexOfLastDocument - documentsPerPage;
+  const currentDocuments = documents.slice(
+    indexOfFirstDocument,
+    indexOfLastDocument
+  );
+  const totalPages = Math.ceil(documents.length / documentsPerPage);
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!firmId) return;
+
+    try {
+      const res = await fetch(`/api/firms/${firmId}/documents/${documentId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete document');
+      }
+
+      toast.success('Document supprimé avec succès');
+      fetchEmployeeData();
+    } catch (error) {
+      toast.error('Échec de la suppression du document');
+      console.error('Error deleting document:', error);
     }
   };
 
@@ -707,75 +752,10 @@ export default function EmployeeDetailsPage() {
                       CV, diplômes, passeport, CNI, fiches de paie, etc.
                     </CardDescription>
                   </div>
-                  <Dialog
-                    open={isUploadDialogOpen}
-                    onOpenChange={setIsUploadDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Upload className='mr-2 h-4 w-4' />
-                        Télécharger un document
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Télécharger un document</DialogTitle>
-                        <DialogDescription>
-                          Ajoutez un nouveau document pour cet employé
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className='space-y-4'>
-                        <div>
-                          <Label htmlFor='doc-type'>Type de document</Label>
-                          <Select>
-                            <SelectTrigger id='doc-type'>
-                              <SelectValue placeholder='Sélectionner le type' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='CV'>CV</SelectItem>
-                              <SelectItem value='ID_CARD'>
-                                Carte d&apos;identité
-                              </SelectItem>
-                              <SelectItem value='PASSPORT'>
-                                Passeport
-                              </SelectItem>
-                              <SelectItem value='DIPLOMA'>Diplôme</SelectItem>
-                              <SelectItem value='CERTIFICATE'>
-                                Certificat
-                              </SelectItem>
-                              <SelectItem value='PAYSLIP'>
-                                Fiche de paie
-                              </SelectItem>
-                              <SelectItem value='CONTRACT'>Contrat</SelectItem>
-                              <SelectItem value='OTHER'>Autre</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor='file'>Fichier</Label>
-                          <Input id='file' type='file' />
-                        </div>
-                        <div>
-                          <Label htmlFor='description'>
-                            Description (optionnel)
-                          </Label>
-                          <Textarea
-                            id='description'
-                            placeholder='Ajouter une description...'
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          variant='outline'
-                          onClick={() => setIsUploadDialogOpen(false)}
-                        >
-                          Annuler
-                        </Button>
-                        <Button>Télécharger</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <Button onClick={() => setIsUploadDialogOpen(true)}>
+                    <Upload className='mr-2 h-4 w-4' />
+                    Télécharger un document
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   {documents.length === 0 ? (
@@ -783,72 +763,197 @@ export default function EmployeeDetailsPage() {
                       Aucun document téléchargé
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Nom du fichier</TableHead>
-                          <TableHead>Taille</TableHead>
-                          <TableHead>Date d&apos;ajout</TableHead>
-                          <TableHead>Expiration</TableHead>
-                          <TableHead>Vérifié</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {documents.map((doc) => (
-                          <TableRow key={doc.id}>
-                            <TableCell>
-                              <div className='flex items-center gap-2'>
-                                {getDocumentIcon(doc.documentType)}
-                                <span>
-                                  {doc.documentType.replace(/_/g, ' ')}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{doc.fileName}</TableCell>
-                            <TableCell>
-                              {doc.fileSize
-                                ? `${(doc.fileSize / 1024).toFixed(1)} KB`
-                                : '-'}
-                            </TableCell>
-                            <TableCell>
-                              {doc.createdAt
-                                ? format(new Date(doc.createdAt), 'dd/MM/yyyy')
-                                : '-'}
-                            </TableCell>
-                            <TableCell>
-                              {doc.expiryDate
-                                ? format(new Date(doc.expiryDate), 'dd/MM/yyyy')
-                                : '-'}
-                            </TableCell>
-                            <TableCell>
-                              {doc.isVerified ? (
-                                <CheckCircle className='h-4 w-4 text-green-600' />
-                              ) : (
-                                <XCircle className='h-4 w-4 text-gray-400' />
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <div className='flex items-center gap-2'>
-                                <Button variant='ghost' size='icon'>
-                                  <Download className='h-4 w-4' />
-                                </Button>
-                                <Button variant='ghost' size='icon'>
-                                  <Eye className='h-4 w-4' />
-                                </Button>
-                                <Button variant='ghost' size='icon'>
-                                  <Trash2 className='text-destructive h-4 w-4' />
-                                </Button>
-                              </div>
-                            </TableCell>
+                    <>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Nom du fichier</TableHead>
+                            <TableHead>Taille</TableHead>
+                            <TableHead>Date d&apos;ajout</TableHead>
+                            <TableHead>Expiration</TableHead>
+                            <TableHead>Vérifié</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {currentDocuments.map((doc) => (
+                            <TableRow key={doc.id}>
+                              <TableCell>
+                                <div className='flex items-center gap-2'>
+                                  {getDocumentIcon(doc.documentType)}
+                                  <span>
+                                    {doc.documentType.replace(/_/g, ' ')}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className='font-medium'>
+                                    {doc.fileName}
+                                  </div>
+                                  {doc.description && (
+                                    <div className='text-muted-foreground text-xs'>
+                                      {doc.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {doc.fileSize
+                                  ? `${(doc.fileSize / 1024).toFixed(1)} KB`
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>
+                                {doc.createdAt
+                                  ? format(
+                                      new Date(doc.createdAt),
+                                      'dd/MM/yyyy'
+                                    )
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>
+                                {doc.expiryDate
+                                  ? format(
+                                      new Date(doc.expiryDate),
+                                      'dd/MM/yyyy'
+                                    )
+                                  : '-'}
+                              </TableCell>
+                              <TableCell>
+                                {doc.isVerified ? (
+                                  <CheckCircle className='h-4 w-4 text-green-600' />
+                                ) : (
+                                  <XCircle className='h-4 w-4 text-gray-400' />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className='flex items-center gap-2'>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    onClick={() => {
+                                      setPreviewDocument(doc);
+                                      setShowPreview(true);
+                                    }}
+                                    title='Aperçu'
+                                  >
+                                    <Eye className='h-4 w-4' />
+                                  </Button>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    onClick={() =>
+                                      window.open(doc.fileUrl, '_blank')
+                                    }
+                                    title='Télécharger'
+                                  >
+                                    <Download className='h-4 w-4' />
+                                  </Button>
+                                  <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    onClick={() => handleDeleteDocument(doc.id)}
+                                    title='Supprimer'
+                                  >
+                                    <Trash2 className='text-destructive h-4 w-4' />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className='mt-4 flex items-center justify-between'>
+                          <div className='text-muted-foreground text-sm'>
+                            Affichage de {indexOfFirstDocument + 1} à{' '}
+                            {Math.min(indexOfLastDocument, documents.length)}{' '}
+                            sur {documents.length} documents
+                          </div>
+                          <div className='flex gap-2'>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={() =>
+                                setCurrentPage((prev) => Math.max(prev - 1, 1))
+                              }
+                              disabled={currentPage === 1}
+                            >
+                              Précédent
+                            </Button>
+                            <div className='flex items-center gap-1'>
+                              {Array.from(
+                                { length: totalPages },
+                                (_, i) => i + 1
+                              ).map((page) => (
+                                <Button
+                                  key={page}
+                                  variant={
+                                    currentPage === page ? 'default' : 'outline'
+                                  }
+                                  size='sm'
+                                  onClick={() => setCurrentPage(page)}
+                                  className='w-8'
+                                >
+                                  {page}
+                                </Button>
+                              ))}
+                            </div>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              onClick={() =>
+                                setCurrentPage((prev) =>
+                                  Math.min(prev + 1, totalPages)
+                                )
+                              }
+                              disabled={currentPage === totalPages}
+                            >
+                              Suivant
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
+
+              {/* Document Upload Dialog */}
+              {employee && firmId && (
+                <DocumentUploadDialog
+                  open={isUploadDialogOpen}
+                  onOpenChange={setIsUploadDialogOpen}
+                  firmId={firmId}
+                  employees={[
+                    {
+                      id: employee.id,
+                      firstName: employee.firstName,
+                      lastName: employee.lastName,
+                      matricule: employee.matricule
+                    }
+                  ]}
+                  preSelectedEmployeeId={employee.id}
+                  onSuccess={fetchEmployeeData}
+                />
+              )}
+
+              {/* Document Preview Modal */}
+              {previewDocument && (
+                <DocumentPreviewModal
+                  isOpen={showPreview}
+                  onClose={() => {
+                    setShowPreview(false);
+                    setPreviewDocument(null);
+                  }}
+                  fileUrl={previewDocument.fileUrl}
+                  fileName={previewDocument.fileName}
+                  mimeType={previewDocument.mimeType}
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

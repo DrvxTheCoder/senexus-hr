@@ -11,7 +11,12 @@
       "Bash(perl:*)",
       "Bash(test:*)",
       "Bash(npm run build:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout /t)"
     ],
     "deny": [],
     "ask": []

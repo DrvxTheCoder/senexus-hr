@@ -105,7 +105,7 @@ const initialFormData: EmployeeFormData = {
   assignedClientId: '',
   status: 'ACTIVE',
   contractType: 'CDD',
-  workingHours: '40',
+  workingHours: 40,
   emergencyContact: {
     name: '',
     phone: '',
