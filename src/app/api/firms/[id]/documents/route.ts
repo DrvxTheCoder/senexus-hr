@@ -74,7 +74,17 @@ export async function GET(
     if (search) {
       where.OR = [
         { fileName: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } }
+        { description: { contains: search, mode: 'insensitive' } },
+        { tags: { hasSome: [search] } },
+        {
+          employee: {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
+              { matricule: { contains: search, mode: 'insensitive' } }
+            ]
+          }
+        }
       ];
     }
 

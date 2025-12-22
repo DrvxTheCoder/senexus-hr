@@ -42,7 +42,7 @@ const steps: Step[] = [
 const personalInfoSchema = z.object({
   firstName: z.string().min(1, 'Prénom requis'),
   lastName: z.string().min(1, 'Nom requis'),
-  matricule: z.string().min(1, 'Matricule requis'),
+  matricule: z.string().optional(),
   email: z.string().email('Email invalide'),
   phone: z.string().min(1, 'Téléphone requis'),
   dateOfBirth: z.string().min(1, 'Date de naissance requise'),
@@ -140,6 +140,20 @@ export function EmployeeMultiStepForm({
         .catch(console.error);
     }
   }, [firmSlug]);
+
+  // Fetch next matricule when creating a new employee
+  useEffect(() => {
+    if (open && !employee && firmId) {
+      fetch(`/api/employees/next-matricule?firmId=${firmId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.matricule) {
+            setFormData((prev) => ({ ...prev, matricule: data.matricule }));
+          }
+        })
+        .catch(console.error);
+    }
+  }, [open, employee, firmId]);
 
   // Load employee data when editing
   useEffect(() => {
@@ -321,6 +335,7 @@ export function EmployeeMultiStepForm({
                       formData={formData}
                       errors={errors}
                       onChange={handleFieldChange}
+                      isEditing={!!employee}
                     />
                   </FormWrapper>
                 )}

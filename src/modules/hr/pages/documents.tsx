@@ -127,8 +127,10 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = React.useState<Document[]>([]);
   const [employees, setEmployees] = React.useState<Employee[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isDocumentsLoading, setIsDocumentsLoading] = React.useState(false);
   const [showUploadDialog, setShowUploadDialog] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState('');
   const [selectedEmployee, setSelectedEmployee] = React.useState<string>('ALL');
   const [selectedType, setSelectedType] = React.useState<string>('ALL');
   const [verifiedFilter, setVerifiedFilter] = React.useState<string>('ALL');
@@ -143,6 +145,15 @@ export default function DocumentsPage() {
   const [currentFolder, setCurrentFolder] = React.useState<string>('');
   const [folders, setFolders] = React.useState<string[]>([]);
 
+  // Debounce search query
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   React.useEffect(() => {
     if (firmSlug) {
       fetchFirmId();
@@ -153,7 +164,13 @@ export default function DocumentsPage() {
     if (firmId) {
       fetchData();
     }
-  }, [firmId, selectedEmployee, selectedType, verifiedFilter, searchQuery]);
+  }, [
+    firmId,
+    selectedEmployee,
+    selectedType,
+    verifiedFilter,
+    debouncedSearchQuery
+  ]);
 
   const fetchFirmId = async () => {
     try {
@@ -168,7 +185,7 @@ export default function DocumentsPage() {
   };
 
   const fetchData = async () => {
-    setIsLoading(true);
+    setIsDocumentsLoading(true);
     try {
       // Build query params
       const params = new URLSearchParams();
@@ -176,7 +193,7 @@ export default function DocumentsPage() {
         params.append('employeeId', selectedEmployee);
       if (selectedType !== 'ALL') params.append('documentType', selectedType);
       if (verifiedFilter !== 'ALL') params.append('isVerified', verifiedFilter);
-      if (searchQuery) params.append('search', searchQuery);
+      if (debouncedSearchQuery) params.append('search', debouncedSearchQuery);
 
       const [docsRes, empsRes] = await Promise.all([
         fetch(`/api/firms/${firmId}/documents?${params.toString()}`),
@@ -196,6 +213,7 @@ export default function DocumentsPage() {
       console.error('Error fetching data:', error);
       toast.error('Échec du chargement des données');
     } finally {
+      setIsDocumentsLoading(false);
       setIsLoading(false);
     }
   };
@@ -420,150 +438,160 @@ export default function DocumentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fichier</TableHead>
-                <TableHead>Employé</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Taille</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {documents.length === 0 ? (
+          {isDocumentsLoading ? (
+            <div className='flex min-h-[200px] items-center justify-center'>
+              <div className='text-muted-foreground'>
+                Chargement des documents...
+              </div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell
-                    colSpan={8}
-                    className='text-muted-foreground text-center'
-                  >
-                    Aucun document trouvé
-                  </TableCell>
+                  <TableHead>Fichier</TableHead>
+                  <TableHead>Employé</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Taille</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : (
-                documents.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-xl'>
-                          {getFileIcon(doc.mimeType)}
-                        </span>
-                        <div>
-                          <div className='font-medium'>{doc.fileName}</div>
-                          {doc.description && (
-                            <div className='text-muted-foreground text-xs'>
-                              {doc.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className='font-medium'>
-                          {doc.employee.firstName} {doc.employee.lastName}
-                        </div>
-                        <div className='text-muted-foreground text-xs'>
-                          {doc.employee.matricule}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant='outline'>
-                        {DOCUMENT_TYPE_LABELS[doc.documentType]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className='text-sm'>
-                      {formatFileSize(doc.fileSize)}
-                    </TableCell>
-                    <TableCell>
-                      {doc.tags.length > 0 ? (
-                        <div className='flex flex-wrap gap-1'>
-                          {doc.tags.slice(0, 2).map((tag, idx) => (
-                            <Badge
-                              key={idx}
-                              variant='secondary'
-                              className='text-xs'
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                          {doc.tags.length > 2 && (
-                            <Badge variant='secondary' className='text-xs'>
-                              +{doc.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className='text-muted-foreground text-xs'>-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {doc.isVerified ? (
-                        <Badge variant='default' className='gap-1'>
-                          <CheckCircle2 className='h-3 w-3' />
-                          Vérifié
-                        </Badge>
-                      ) : (
-                        <Badge variant='outline' className='gap-1'>
-                          <Clock className='h-3 w-3' />
-                          Non vérifié
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className='text-sm'>
-                      {format(new Date(doc.createdAt), 'dd MMM yyyy', {
-                        locale: fr
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='sm'>
-                            <MoreVertical className='h-4 w-4' />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end'>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setPreviewDocument(doc);
-                              setShowPreview(true);
-                            }}
-                          >
-                            <Eye className='mr-2 h-4 w-4' />
-                            Aperçu
-                          </DropdownMenuItem>
-                          {!doc.isVerified && (
-                            <DropdownMenuItem
-                              onClick={() => handleVerify(doc.id)}
-                            >
-                              <CheckCircle2 className='mr-2 h-4 w-4' />
-                              Vérifier
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setDocumentToDelete(doc);
-                              setDeleteDialogOpen(true);
-                            }}
-                            className='text-destructive'
-                          >
-                            <Trash2 className='mr-2 h-4 w-4' />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {documents.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className='text-muted-foreground text-center'
+                    >
+                      Aucun document trouvé
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  documents.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-xl'>
+                            {getFileIcon(doc.mimeType)}
+                          </span>
+                          <div>
+                            <div className='font-medium'>{doc.fileName}</div>
+                            {doc.description && (
+                              <div className='text-muted-foreground text-xs'>
+                                {doc.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className='font-medium'>
+                            {doc.employee.firstName} {doc.employee.lastName}
+                          </div>
+                          <div className='text-muted-foreground text-xs'>
+                            {doc.employee.matricule}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant='outline'>
+                          {DOCUMENT_TYPE_LABELS[doc.documentType]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className='text-sm'>
+                        {formatFileSize(doc.fileSize)}
+                      </TableCell>
+                      <TableCell>
+                        {doc.tags.length > 0 ? (
+                          <div className='flex flex-wrap gap-1'>
+                            {doc.tags.slice(0, 2).map((tag, idx) => (
+                              <Badge
+                                key={idx}
+                                variant='secondary'
+                                className='text-xs'
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                            {doc.tags.length > 2 && (
+                              <Badge variant='secondary' className='text-xs'>
+                                +{doc.tags.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className='text-muted-foreground text-xs'>
+                            -
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {doc.isVerified ? (
+                          <Badge variant='default' className='gap-1'>
+                            <CheckCircle2 className='h-3 w-3' />
+                            Vérifié
+                          </Badge>
+                        ) : (
+                          <Badge variant='outline' className='gap-1'>
+                            <Clock className='h-3 w-3' />
+                            Non vérifié
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className='text-sm'>
+                        {format(new Date(doc.createdAt), 'dd MMM yyyy', {
+                          locale: fr
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant='ghost' size='sm'>
+                              <MoreVertical className='h-4 w-4' />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end'>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setPreviewDocument(doc);
+                                setShowPreview(true);
+                              }}
+                            >
+                              <Eye className='mr-2 h-4 w-4' />
+                              Aperçu
+                            </DropdownMenuItem>
+                            {!doc.isVerified && (
+                              <DropdownMenuItem
+                                onClick={() => handleVerify(doc.id)}
+                              >
+                                <CheckCircle2 className='mr-2 h-4 w-4' />
+                                Vérifier
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setDocumentToDelete(doc);
+                                setDeleteDialogOpen(true);
+                              }}
+                              className='text-destructive'
+                            >
+                              <Trash2 className='mr-2 h-4 w-4' />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 

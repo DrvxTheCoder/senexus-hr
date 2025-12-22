@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/auth.config';
 import { db } from '@/lib/db';
+import { generateNextMatricule } from '@/lib/utils/matricule';
 
 // GET /api/employees?firmId=xxx - Get all employees for a firm
 export async function GET(req: NextRequest) {
@@ -119,23 +120,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if matricule already exists for this firm
-    if (employeeData.matricule) {
-      const existingEmployee = await db.employee.findUnique({
-        where: {
-          firmId_matricule: {
-            firmId,
-            matricule: employeeData.matricule
-          }
-        }
-      });
+    // Generate matricule if not provided
+    let matricule = employeeData.matricule;
+    if (!matricule) {
+      matricule = await generateNextMatricule(firmId);
+    }
 
-      if (existingEmployee) {
-        return NextResponse.json(
-          { error: 'Matricule already exists' },
-          { status: 400 }
-        );
+    // Check if matricule already exists for this firm
+    const existingEmployee = await db.employee.findUnique({
+      where: {
+        firmId_matricule: {
+          firmId,
+          matricule: matricule
+        }
       }
+    });
+
+    if (existingEmployee) {
+      return NextResponse.json(
+        { error: 'Matricule already exists' },
+        { status: 400 }
+      );
     }
 
     // Create employee and contract in a transaction
@@ -146,7 +151,7 @@ export async function POST(req: NextRequest) {
           firmId,
           firstName: employeeData.firstName,
           lastName: employeeData.lastName,
-          matricule: employeeData.matricule,
+          matricule: matricule,
           email: employeeData.email,
           phone: employeeData.phone,
           address: employeeData.address,

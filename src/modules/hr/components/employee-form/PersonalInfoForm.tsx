@@ -10,18 +10,22 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { ProfilePhotoUpload } from '@/components/profile-photo-upload';
+import { Combobox } from '@/components/ui/combobox';
+import { COUNTRIES } from '@/lib/constants/countries';
 import { EmployeeFormData, EmployeeFormErrors } from './types';
 
 interface PersonalInfoFormProps {
   formData: EmployeeFormData;
   errors: EmployeeFormErrors;
   onChange: (field: keyof EmployeeFormData, value: any) => void;
+  isEditing?: boolean;
 }
 
 export function PersonalInfoForm({
   formData,
   errors,
-  onChange
+  onChange,
+  isEditing = false
 }: PersonalInfoFormProps) {
   return (
     <div className='space-y-3 px-1'>
@@ -72,9 +76,22 @@ export function PersonalInfoForm({
           <Input
             id='matricule'
             value={formData.matricule}
-            onChange={(e) => onChange('matricule', e.target.value)}
-            className={errors.matricule ? 'border-destructive' : ''}
+            readOnly={!isEditing}
+            disabled={!isEditing}
+            className={
+              errors.matricule
+                ? 'border-destructive'
+                : !isEditing
+                  ? 'bg-muted'
+                  : ''
+            }
+            title={!isEditing ? 'Matricule généré automatiquement' : ''}
           />
+          {!isEditing && formData.matricule && (
+            <p className='text-muted-foreground text-xs'>
+              Généré automatiquement
+            </p>
+          )}
           {errors.matricule && (
             <p className='text-destructive text-xs'>{errors.matricule}</p>
           )}
@@ -169,10 +186,13 @@ export function PersonalInfoForm({
           <Label htmlFor='nationality'>
             Nationalité <span className='text-destructive'>*</span>
           </Label>
-          <Input
-            id='nationality'
+          <Combobox
+            options={COUNTRIES}
             value={formData.nationality}
-            onChange={(e) => onChange('nationality', e.target.value)}
+            onValueChange={(value) => onChange('nationality', value)}
+            placeholder='Sélectionner un pays'
+            searchPlaceholder='Rechercher un pays...'
+            emptyMessage='Aucun pays trouvé.'
             className={errors.nationality ? 'border-destructive' : ''}
           />
           {errors.nationality && (
@@ -202,12 +222,21 @@ export function PersonalInfoForm({
           <Label htmlFor='maritalStatus'>
             État civil <span className='text-destructive'>*</span>
           </Label>
-          <Input
-            id='maritalStatus'
+          <Select
             value={formData.maritalStatus}
-            onChange={(e) => onChange('maritalStatus', e.target.value)}
-            className={errors.maritalStatus ? 'border-destructive' : ''}
-          />
+            onValueChange={(value) => onChange('maritalStatus', value)}
+          >
+            <SelectTrigger
+              className={errors.maritalStatus ? 'border-destructive' : ''}
+            >
+              <SelectValue placeholder='Sélectionner' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='CELIBATAIRE'>Célibataire</SelectItem>
+              <SelectItem value='MARIE'>Marié(e)</SelectItem>
+              <SelectItem value='VEUF'>Veuf/Veuve</SelectItem>
+            </SelectContent>
+          </Select>
           {errors.maritalStatus && (
             <p className='text-destructive text-xs'>{errors.maritalStatus}</p>
           )}
