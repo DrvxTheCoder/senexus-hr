@@ -13,21 +13,82 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Users,
-  Building2,
   Calendar,
-  Briefcase,
   ArrowRightLeft,
-  AlertCircle
+  AlertCircle,
+  Clock,
+  XCircle,
+  ArrowRight
 } from 'lucide-react';
-import { getEmployees } from '../actions/employee-actions';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip
+} from 'recharts';
 
 interface DashboardStats {
   totalEmployees: number;
   activeEmployees: number;
   onLeave: number;
   inactive: number;
+}
+
+interface ContractInfo {
+  id: string;
+  employee: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    matricule: string;
+  };
+  type: string;
+  endDate: string | null;
+}
+
+interface LeaveInfo {
+  id: string;
+  employee: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    matricule: string;
+  };
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface DashboardData {
+  stats: DashboardStats;
+  contracts: {
+    total: number;
+    expiredCount: number;
+    closeToExpirationCount: number;
+    expired: ContractInfo[];
+    closeToExpiration: ContractInfo[];
+  };
+  leaves: {
+    currentCount: number;
+    current: LeaveInfo[];
+  };
+  demographics: {
+    gender: {
+      male: number;
+      female: number;
+      other: number;
+    };
+    ageGroups: {
+      '18-30': number;
+      '30-60': number;
+      '60+': number;
+      unknown: number;
+    };
+  };
 }
 
 interface PendingTransfer {
@@ -55,12 +116,9 @@ export default function HRDashboard() {
   const firmSlug = params.firmSlug as string;
   const moduleSlug = params.moduleSlug as string;
 
-  const [stats, setStats] = useState<DashboardStats>({
-    totalEmployees: 0,
-    activeEmployees: 0,
-    onLeave: 0,
-    inactive: 0
-  });
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(
+    null
+  );
   const [pendingTransfers, setPendingTransfers] = useState<PendingTransfer[]>(
     []
   );
@@ -87,27 +145,14 @@ export default function HRDashboard() {
 
       setFirmId(firm.id);
 
-      // Fetch employees
-      const employeesResponse = await getEmployees(firm.id);
-      const employees = employeesResponse.success
-        ? employeesResponse.data || []
-        : [];
-      const activeCount = employees.filter(
-        (e: any) => e.status === 'ACTIVE'
-      ).length;
-      const onLeaveCount = employees.filter(
-        (e: any) => e.status === 'ON_LEAVE'
-      ).length;
-      const inactiveCount = employees.filter(
-        (e: any) => e.status === 'INACTIVE'
-      ).length;
-
-      setStats({
-        totalEmployees: employees.length,
-        activeEmployees: activeCount,
-        onLeave: onLeaveCount,
-        inactive: inactiveCount
-      });
+      // Fetch dashboard statistics
+      const statsResponse = await fetch(
+        `/api/firms/${firm.id}/dashboard-stats`
+      );
+      if (statsResponse.ok) {
+        const data = await statsResponse.json();
+        setDashboardData(data);
+      }
 
       // Fetch pending transfers (incoming to this firm)
       try {
@@ -136,6 +181,54 @@ export default function HRDashboard() {
     }
   }
 
+  const stats = dashboardData?.stats || {
+    totalEmployees: 0,
+    activeEmployees: 0,
+    onLeave: 0,
+    inactive: 0
+  };
+
+  // Prepare chart data
+  const genderData = dashboardData
+    ? [
+        {
+          name: 'Hommes',
+          value: dashboardData.demographics.gender.male,
+          color: '#3b82f6'
+        },
+        {
+          name: 'Femmes',
+          value: dashboardData.demographics.gender.female,
+          color: '#ec4899'
+        },
+        {
+          name: 'Autre',
+          value: dashboardData.demographics.gender.other,
+          color: '#8b5cf6'
+        }
+      ].filter((item) => item.value > 0)
+    : [];
+
+  const ageGroupData = dashboardData
+    ? [
+        {
+          name: '18-30 ans',
+          value: dashboardData.demographics.ageGroups['18-30'],
+          color: '#10b981'
+        },
+        {
+          name: '30-60 ans',
+          value: dashboardData.demographics.ageGroups['30-60'],
+          color: '#f59e0b'
+        },
+        {
+          name: '60+ ans',
+          value: dashboardData.demographics.ageGroups['60+'],
+          color: '#ef4444'
+        }
+      ].filter((item) => item.value > 0)
+    : [];
+
   return (
     <div className='flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8'>
       <div className='flex items-center justify-between'>
@@ -149,12 +242,12 @@ export default function HRDashboard() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Row 1 */}
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-        <Card>
+        <Card className='transition-shadow hover:shadow-md'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>
-              Employés Total
+              Total Employés
             </CardTitle>
             <Users className='text-muted-foreground h-4 w-4' />
           </CardHeader>
@@ -162,115 +255,181 @@ export default function HRDashboard() {
             <div className='text-2xl font-bold'>
               {loading ? '...' : stats.totalEmployees}
             </div>
-            <p className='text-muted-foreground text-xs'>Effectif total</p>
+            <p className='text-muted-foreground mt-1 text-xs'>Effectif total</p>
+            <Button
+              variant='link'
+              className='mt-2 h-auto p-0 text-xs'
+              onClick={() =>
+                router.push(`/${firmSlug}/${moduleSlug}/employees`)
+              }
+            >
+              Voir tous <ArrowRight className='ml-1 h-3 w-3' />
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='transition-shadow hover:shadow-md'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Actifs</CardTitle>
-            <Building2 className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-green-600'>
-              {loading ? '...' : stats.activeEmployees}
-            </div>
-            <p className='text-muted-foreground text-xs'>Employés actifs</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>En congé</CardTitle>
-            <Calendar className='text-muted-foreground h-4 w-4' />
+            <CardTitle className='text-sm font-medium'>
+              Contrats Expirant
+            </CardTitle>
+            <Clock className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-orange-600'>
-              {loading ? '...' : stats.onLeave}
+              {loading
+                ? '...'
+                : dashboardData?.contracts.closeToExpirationCount || 0}
             </div>
-            <p className='text-muted-foreground text-xs'>
-              Absents temporairement
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Dans les 30 prochains jours
             </p>
+            <Button
+              variant='link'
+              className='mt-2 h-auto p-0 text-xs'
+              onClick={() =>
+                router.push(
+                  `/${firmSlug}/${moduleSlug}/contracts?filter=expiring`
+                )
+              }
+            >
+              Voir détails <ArrowRight className='ml-1 h-3 w-3' />
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='transition-shadow hover:shadow-md'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Inactifs</CardTitle>
-            <Briefcase className='text-muted-foreground h-4 w-4' />
+            <CardTitle className='text-sm font-medium'>
+              Contrats Expirés
+            </CardTitle>
+            <XCircle className='text-muted-foreground h-4 w-4' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold text-gray-600'>
-              {loading ? '...' : stats.inactive}
+            <div className='text-2xl font-bold text-red-600'>
+              {loading ? '...' : dashboardData?.contracts.expiredCount || 0}
             </div>
-            <p className='text-muted-foreground text-xs'>Non actifs</p>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Nécessitent une action
+            </p>
+            <Button
+              variant='link'
+              className='mt-2 h-auto p-0 text-xs'
+              onClick={() =>
+                router.push(
+                  `/${firmSlug}/${moduleSlug}/contracts?filter=expired`
+                )
+              }
+            >
+              Voir détails <ArrowRight className='ml-1 h-3 w-3' />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className='transition-shadow hover:shadow-md'>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>En Congé</CardTitle>
+            <Calendar className='text-muted-foreground h-4 w-4' />
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold text-blue-600'>
+              {loading ? '...' : dashboardData?.leaves.currentCount || 0}
+            </div>
+            <p className='text-muted-foreground mt-1 text-xs'>
+              Employés actuellement absents
+            </p>
+            <Button
+              variant='link'
+              className='mt-2 h-auto p-0 text-xs'
+              onClick={() =>
+                router.push(`/${firmSlug}/${moduleSlug}/leaves?filter=current`)
+              }
+            >
+              Voir détails <ArrowRight className='ml-1 h-3 w-3' />
+            </Button>
           </CardContent>
         </Card>
       </div>
 
-      {/* Activity Info */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-7'>
-        <Card className='col-span-4'>
+      {/* Charts Section */}
+      <div className='grid gap-4 md:grid-cols-2'>
+        {/* Gender Distribution Chart */}
+        <Card>
           <CardHeader>
-            <CardTitle>Bienvenue au module RH</CardTitle>
+            <CardTitle>Répartition par Genre</CardTitle>
+            <CardDescription>
+              Distribution hommes/femmes dans l&apos;effectif
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='space-y-4'>
-              <p className='text-muted-foreground'>
-                Utilisez le menu de navigation pour accéder aux différentes
-                fonctionnalités:
-              </p>
-              <ul className='text-muted-foreground list-inside list-disc space-y-2'>
-                <li>Gestion des employés</li>
-                <li>Gestion des congés</li>
-                <li>Suivi des missions</li>
-                <li>Rapports et statistiques</li>
-              </ul>
-            </div>
+            {loading || genderData.length === 0 ? (
+              <div className='text-muted-foreground flex h-[300px] items-center justify-center'>
+                {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+              </div>
+            ) : (
+              <ResponsiveContainer width='100%' height={300}>
+                <PieChart>
+                  <Pie
+                    data={genderData}
+                    cx='50%'
+                    cy='50%'
+                    innerRadius={60}
+                    outerRadius={100}
+                    fill='#8884d8'
+                    paddingAngle={5}
+                    dataKey='value'
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {genderData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
-        <Card className='col-span-3'>
+        {/* Age Group Distribution Chart */}
+        <Card>
           <CardHeader>
-            <CardTitle>Statistiques rapides</CardTitle>
+            <CardTitle>Répartition par Tranche d&apos;Âge</CardTitle>
+            <CardDescription>
+              Distribution des employés par groupe d&apos;âge
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className='space-y-4'>
-              {[
-                {
-                  label: "Taux d'activité",
-                  value:
-                    stats.totalEmployees > 0
-                      ? `${Math.round((stats.activeEmployees / stats.totalEmployees) * 100)}%`
-                      : '0%',
-                  color: 'bg-green-500'
-                },
-                {
-                  label: 'En congé',
-                  value:
-                    stats.totalEmployees > 0
-                      ? `${Math.round((stats.onLeave / stats.totalEmployees) * 100)}%`
-                      : '0%',
-                  color: 'bg-orange-500'
-                },
-                {
-                  label: 'Inactifs',
-                  value:
-                    stats.totalEmployees > 0
-                      ? `${Math.round((stats.inactive / stats.totalEmployees) * 100)}%`
-                      : '0%',
-                  color: 'bg-gray-500'
-                }
-              ].map((stat, index) => (
-                <div key={index} className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2'>
-                    <div className={`${stat.color} h-2 w-2 rounded-full`} />
-                    <span className='text-sm font-medium'>{stat.label}</span>
-                  </div>
-                  <span className='text-sm font-bold'>{stat.value}</span>
-                </div>
-              ))}
-            </div>
+            {loading || ageGroupData.length === 0 ? (
+              <div className='text-muted-foreground flex h-[300px] items-center justify-center'>
+                {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+              </div>
+            ) : (
+              <ResponsiveContainer width='100%' height={300}>
+                <PieChart>
+                  <Pie
+                    data={ageGroupData}
+                    cx='50%'
+                    cy='50%'
+                    outerRadius={100}
+                    fill='#8884d8'
+                    dataKey='value'
+                    label={({ name, percent }) =>
+                      `${name} ${(percent * 100).toFixed(0)}%`
+                    }
+                  >
+                    {ageGroupData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
