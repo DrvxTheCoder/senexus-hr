@@ -19,6 +19,16 @@ const baseConfig: NextConfig = {
         protocol: 'https',
         hostname: 'zipline.flanpaul.dev',
         port: ''
+      },
+      {
+        protocol: 'https',
+        hostname: 'zipline.senexus-app.cloud',
+        port: ''
+      },
+      {
+        protocol: 'http',
+        hostname: 'zipline.senexus-app.cloud',
+        port: ''
       }
     ]
   },
