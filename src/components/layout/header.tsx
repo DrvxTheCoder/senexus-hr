@@ -21,9 +21,9 @@ export default function Header() {
       <div className='flex items-center gap-2 px-4'>
         {/* <CtaGithub /> */}
         <ModeToggle />
-        <div className='hidden md:flex'>
+        {/* <div className='hidden md:flex'>
           <SearchInput />
-        </div>
+        </div> */}
         <UserNav />
 
         {/* <ThemeSelector /> */}

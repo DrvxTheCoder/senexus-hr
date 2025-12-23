@@ -450,16 +450,11 @@ export default function ContractsPage() {
                 ? 'Aucun contrat ne correspond à vos critères de recherche.'
                 : 'Commencez par créer un nouveau contrat.'}
             </p>
-            {!searchQuery && !statusFilter && !typeFilter && (
-              <Button
-                onClick={() =>
-                  router.push(`/${firmSlug}/${moduleSlug}/contracts/new`)
-                }
-              >
-                <Plus className='mr-2 h-4 w-4' />
-                Créer un contrat
-              </Button>
-            )}
+            {/* <ContractFormDialog
+                open={isCreateDialogOpen}
+                onOpenChange={setIsCreateDialogOpen}
+                onSuccess={fetchContracts}
+              /> */}
           </CardContent>
         </Card>
       ) : (

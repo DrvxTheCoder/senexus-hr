@@ -110,13 +110,6 @@ export function SignInForm() {
             )}
           </Button>
         </form>
-
-        <div className='text-muted-foreground mt-4 text-center text-sm'>
-          <p>Identifiants de démonstration :</p>
-          <p className='mt-1 font-mono text-xs'>
-            flanpaul19@gmail.com / password123!
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

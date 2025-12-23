@@ -76,7 +76,7 @@ export function UserNav() {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-
+        {/* 
         <DropdownMenuGroup>
           <DropdownMenuItem className='cursor-pointer'>
             <IconUserCircle className='mr-2 h-4 w-4' />
@@ -87,7 +87,7 @@ export function UserNav() {
             Compte
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator /> */}
         <DropdownMenuItem
           onClick={() => router.push('/select-firm')}
           className='cursor-pointer'

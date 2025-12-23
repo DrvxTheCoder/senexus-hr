@@ -313,24 +313,6 @@ export default function AppSidebar({ firmSlug, firm }: AppSidebarProps) {
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-
-                <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => router.push('/dashboard/profile')}
-                  >
-                    <IconUserCircle className='mr-2 h-4 w-4' />
-                    Profil
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <IconCreditCard className='mr-2 h-4 w-4' />
-                    Facturation
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <IconBell className='mr-2 h-4 w-4' />
-                    Notifications
-                  </DropdownMenuItem>
-                </DropdownMenuGroup>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => signOut({ callbackUrl: '/auth/sign-in' })}
                   className='cursor-pointer'
