@@ -1,9 +1,4 @@
-import {
-  PrismaClient,
-  FirmRole,
-  ClientStatus,
-  EmployeeStatus
-} from '@prisma/client';
+import { PrismaClient, FirmRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -86,205 +81,6 @@ async function seedModules() {
   return { hrModule, crmModule };
 }
 
-async function seedFirmData(
-  firmId: string,
-  userId: string,
-  hrModuleId: string,
-  crmModuleId: string
-) {
-  console.log('\n🏢 Seeding firm data...');
-
-  // Create sample clients
-  const client1 = await prisma.client.create({
-    data: {
-      firmId,
-      name: 'TOUBA GAZ MBAO',
-      status: ClientStatus.ACTIVE,
-      contactName: 'Moussa Diop',
-      contactEmail: 'contact@toubagaz.sn',
-      contactPhone: '+221 77 123 45 67',
-      address: 'Mbao, Dakar, Sénégal',
-      industry: 'Distribution de gaz',
-      contractStartDate: new Date('2023-01-01'),
-      tags: ['Distribution', 'Énergie']
-    }
-  });
-
-  const client2 = await prisma.client.create({
-    data: {
-      firmId,
-      name: 'SOCOCIM Industries',
-      status: ClientStatus.ACTIVE,
-      contactName: 'Fatou Sall',
-      contactEmail: 'contact@sococim.sn',
-      contactPhone: '+221 77 987 65 43',
-      address: 'Rufisque, Dakar, Sénégal',
-      industry: 'Cimenterie',
-      contractStartDate: new Date('2023-06-01'),
-      tags: ['BTP', 'Industrie']
-    }
-  });
-
-  console.log(`✅ Created ${2} clients`);
-
-  // Create sample departments
-  const hrDept = await prisma.department.create({
-    data: {
-      firmId,
-      name: 'Ressources Humaines',
-      code: 'RH'
-    }
-  });
-
-  const opsDept = await prisma.department.create({
-    data: {
-      firmId,
-      name: 'Opérations',
-      code: 'OPS'
-    }
-  });
-
-  console.log(`✅ Created ${2} departments`);
-
-  // Create sample employees with new fields
-  const employees = [
-    {
-      firstName: 'Aminata',
-      lastName: 'Diallo',
-      matricule: 'EMP-2023-001',
-      email: 'aminata.diallo@example.com',
-      phone: '+221 77 555 0001',
-      dateOfBirth: new Date('1990-05-15'),
-      placeOfBirth: 'Dakar',
-      maritalStatus: 'MARIE',
-      nationality: 'Sénégalaise',
-      cni: '1234567890123',
-      jobTitle: 'TECHNICIENNE DE SURFACE',
-      category: '4EME',
-      hireDate: new Date('2023-06-01'),
-      contractEndDate: new Date('2025-06-01'),
-      status: EmployeeStatus.ACTIVE,
-      assignedClientId: client1.id,
-      departmentId: opsDept.id
-    },
-    {
-      firstName: 'Mamadou',
-      lastName: 'Ndiaye',
-      matricule: 'EMP-2023-002',
-      email: 'mamadou.ndiaye@example.com',
-      phone: '+221 77 555 0002',
-      dateOfBirth: new Date('1988-08-22'),
-      placeOfBirth: 'Thiès',
-      maritalStatus: 'MARIE',
-      nationality: 'Sénégalaise',
-      cni: '1234567890124',
-      jobTitle: 'CHAUFFEUR LIVREUR',
-      category: '5EME',
-      hireDate: new Date('2023-07-15'),
-      contractEndDate: new Date('2025-07-15'),
-      status: EmployeeStatus.ACTIVE,
-      assignedClientId: client1.id,
-      departmentId: opsDept.id
-    },
-    {
-      firstName: 'Fatou',
-      lastName: 'Seck',
-      matricule: 'EMP-2023-003',
-      email: 'fatou.seck@example.com',
-      phone: '+221 77 555 0003',
-      dateOfBirth: new Date('1992-03-10'),
-      placeOfBirth: 'Saint-Louis',
-      maritalStatus: 'CELIBATAIRE',
-      nationality: 'Sénégalaise',
-      cni: '1234567890125',
-      jobTitle: 'AGENT DE SECURITE INCENDIE',
-      category: '5EME',
-      hireDate: new Date('2023-08-01'),
-      contractEndDate: new Date('2025-08-01'),
-      status: EmployeeStatus.ACTIVE,
-      assignedClientId: client2.id,
-      departmentId: opsDept.id
-    },
-    {
-      firstName: 'Ousmane',
-      lastName: 'Ba',
-      matricule: 'EMP-2023-004',
-      email: 'ousmane.ba@example.com',
-      phone: '+221 77 555 0004',
-      dateOfBirth: new Date('1985-11-30'),
-      placeOfBirth: 'Kaolack',
-      maritalStatus: 'MARIE',
-      nationality: 'Sénégalaise',
-      cni: '1234567890126',
-      jobTitle: 'RECEPTIONNISTE',
-      category: '7A',
-      hireDate: new Date('2024-01-02'),
-      contractEndDate: new Date('2026-01-01'),
-      status: EmployeeStatus.ACTIVE,
-      assignedClientId: client2.id,
-      departmentId: opsDept.id
-    },
-    {
-      firstName: 'Awa',
-      lastName: 'Thiam',
-      matricule: 'EMP-2023-005',
-      email: 'awa.thiam@example.com',
-      phone: '+221 77 555 0005',
-      dateOfBirth: new Date('1995-07-18'),
-      placeOfBirth: 'Ziguinchor',
-      maritalStatus: 'CELIBATAIRE',
-      nationality: 'Sénégalaise',
-      cni: '1234567890127',
-      jobTitle: 'LAVEUSE',
-      category: '5EME',
-      hireDate: new Date('2024-02-01'),
-      status: EmployeeStatus.ACTIVE,
-      assignedClientId: client1.id,
-      departmentId: opsDept.id
-    }
-  ];
-
-  for (const empData of employees) {
-    await prisma.employee.create({
-      data: {
-        ...empData,
-        firmId,
-        emergencyContact: {
-          name: 'Contact Urgence',
-          phone: '+221 77 999 9999',
-          relationship: 'Famille'
-        }
-      }
-    });
-  }
-
-  console.log(`✅ Created ${employees.length} employees`);
-
-  // Create sample contracts for employees
-  const allEmployees = await prisma.employee.findMany({ where: { firmId } });
-
-  for (const emp of allEmployees) {
-    if (emp.assignedClientId) {
-      await prisma.contract.create({
-        data: {
-          firmId,
-          employeeId: emp.id,
-          clientId: emp.assignedClientId,
-          type: 'INTERIM',
-          startDate: emp.hireDate,
-          endDate: emp.contractEndDate,
-          position: emp.jobTitle || 'Non spécifié',
-          salary: 150000, // 150,000 FCFA
-          isActive: true,
-          alertThreshold: 30
-        }
-      });
-    }
-  }
-
-  console.log(`✅ Created contracts for employees`);
-}
-
 async function main() {
   console.log('🌱 Seeding database...');
 
@@ -304,10 +100,14 @@ async function main() {
   // Hash password
   const passwordHash = await bcrypt.hash('password123!', 10);
 
-  // Create test user
-  const user = await prisma.user.upsert({
+  // Create admin user
+  const adminUser = await prisma.user.upsert({
     where: { email: 'flanpaul19@gmail.com' },
-    update: {},
+    update: {
+      name: 'Paul Flan',
+      passwordHash,
+      emailVerified: new Date()
+    },
     create: {
       email: 'flanpaul19@gmail.com',
       name: 'Paul Flan',
@@ -316,87 +116,114 @@ async function main() {
     }
   });
 
-  console.log('✅ Created user:', user.email);
+  console.log('✅ Created admin user:', adminUser.email);
 
   // Seed modules
   const { hrModule, crmModule } = await seedModules();
 
-  // Create a demo firm
-  const firm = await prisma.firm.upsert({
-    where: { slug: 'connect-interim' },
-    update: {},
-    create: {
+  // Create demo firms
+  const firms = [
+    {
       slug: 'connect-interim',
       name: 'Connect Interim',
-      holdingId: holding.id,
       themeColor: '#3b82f6'
-    }
-  });
-
-  console.log('✅ Created firm:', firm.name);
-
-  // Assign user to firm as OWNER
-  await prisma.userFirm.upsert({
-    where: {
-      userId_firmId: {
-        userId: user.id,
-        firmId: firm.id
-      }
     },
-    update: {},
-    create: {
-      userId: user.id,
-      firmId: firm.id,
-      role: FirmRole.OWNER
+    {
+      slug: 'senexus-consulting',
+      name: 'Senexus Consulting',
+      themeColor: '#10b981'
     }
-  });
+  ];
 
-  console.log('✅ Assigned user to firm as OWNER');
+  console.log('\n🏢 Creating firms and assigning admin access...');
 
-  // Install modules for the firm
-  await prisma.firmModule.upsert({
-    where: {
-      firmId_moduleId: {
+  for (const firmData of firms) {
+    // Create or update firm
+    const firm = await prisma.firm.upsert({
+      where: { slug: firmData.slug },
+      update: {
+        name: firmData.name,
+        themeColor: firmData.themeColor
+      },
+      create: {
+        slug: firmData.slug,
+        name: firmData.name,
+        holdingId: holding.id,
+        themeColor: firmData.themeColor
+      }
+    });
+
+    console.log(`✅ Created firm: ${firm.name}`);
+
+    // Assign admin user to firm as OWNER
+    await prisma.userFirm.upsert({
+      where: {
+        userId_firmId: {
+          userId: adminUser.id,
+          firmId: firm.id
+        }
+      },
+      update: {
+        role: FirmRole.OWNER
+      },
+      create: {
+        userId: adminUser.id,
         firmId: firm.id,
-        moduleId: hrModule.id
+        role: FirmRole.OWNER
       }
-    },
-    update: {},
-    create: {
-      firmId: firm.id,
-      moduleId: hrModule.id,
-      isEnabled: true,
-      installedBy: user.id
-    }
-  });
+    });
 
-  await prisma.firmModule.upsert({
-    where: {
-      firmId_moduleId: {
+    console.log(`✅ Assigned admin to ${firm.name} as OWNER`);
+
+    // Install HR module (system module)
+    await prisma.firmModule.upsert({
+      where: {
+        firmId_moduleId: {
+          firmId: firm.id,
+          moduleId: hrModule.id
+        }
+      },
+      update: {
+        isEnabled: true
+      },
+      create: {
         firmId: firm.id,
-        moduleId: crmModule.id
+        moduleId: hrModule.id,
+        isEnabled: true,
+        installedBy: adminUser.id
       }
-    },
-    update: {},
-    create: {
-      firmId: firm.id,
-      moduleId: crmModule.id,
-      isEnabled: true,
-      installedBy: user.id
-    }
-  });
+    });
 
-  console.log('✅ Installed HR and CRM modules for firm');
+    // Install CRM module
+    await prisma.firmModule.upsert({
+      where: {
+        firmId_moduleId: {
+          firmId: firm.id,
+          moduleId: crmModule.id
+        }
+      },
+      update: {
+        isEnabled: true
+      },
+      create: {
+        firmId: firm.id,
+        moduleId: crmModule.id,
+        isEnabled: true,
+        installedBy: adminUser.id
+      }
+    });
 
-  // Seed firm data
-  await seedFirmData(firm.id, user.id, hrModule.id, crmModule.id);
+    console.log(`✅ Installed modules for ${firm.name}`);
+  }
 
   console.log('\n📝 Login credentials:');
   console.log('   Email: flanpaul19@gmail.com');
   console.log('   Password: password123!');
-  console.log('\n🌐 Access your firm at:');
+  console.log('\n🌐 Access your firms at:');
   console.log('   http://localhost:3000/connect-interim/dashboard/overview');
+  console.log('   http://localhost:3000/senexus-consulting/dashboard/overview');
   console.log('\n✨ Seeding completed successfully!');
+  console.log('✨ Admin has OWNER access to all firms');
 }
 
 main()
