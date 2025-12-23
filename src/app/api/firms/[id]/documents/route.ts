@@ -159,7 +159,7 @@ export async function POST(
     const formData = await req.formData();
     const file = formData.get('file') as File;
     const employeeId = formData.get('employeeId') as string;
-    const documentType = formData.get('documentType') as string;
+    const documentType = formData.get('documentType') as any; // Will be validated by Prisma
     const description = formData.get('description') as string | null;
     const tagsString = formData.get('tags') as string | null;
     const expiryDate = formData.get('expiryDate') as string | null;
