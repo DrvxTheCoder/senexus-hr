@@ -206,6 +206,7 @@ export async function POST(
         actorId: session.user.id,
         action: 'CREATE',
         entity: 'LEAVE_BALANCE',
+        entityId: firmId, // Using firmId as this is a bulk operation
         metadata: {
           year: currentYear,
           employeesProcessed: employees.length,

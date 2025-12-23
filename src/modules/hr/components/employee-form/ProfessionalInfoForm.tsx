@@ -139,7 +139,7 @@ export function ProfessionalInfoForm({
       <div className='grid grid-cols-3 gap-4'>
         <div className='space-y-2'>
           <Label htmlFor='hireDate'>
-            Date d'embauche <span className='text-destructive'>*</span>
+            Date d&apos;embauche <span className='text-destructive'>*</span>
           </Label>
           <Input
             id='hireDate'
@@ -284,7 +284,7 @@ export function ProfessionalInfoForm({
 
       {/* Emergency Contact Section */}
       <div className='space-y-4 border-t pt-4'>
-        <h3 className='text-lg font-semibold'>Contact d'urgence</h3>
+        <h3 className='text-lg font-semibold'>Contact d&apos;urgence</h3>
 
         <div className='grid grid-cols-3 gap-4'>
           <div className='space-y-2'>

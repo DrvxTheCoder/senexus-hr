@@ -484,7 +484,7 @@ export function DocumentUploadDialog({
 
           {/* Expiry Date */}
           <div className='space-y-2'>
-            <Label>Date d'expiration</Label>
+            <Label>Date d&apos;expiration</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button

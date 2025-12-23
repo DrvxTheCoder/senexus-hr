@@ -520,7 +520,7 @@ export default function LeavesPage() {
         <CardHeader>
           <CardTitle>Soldes de congés</CardTitle>
           <CardDescription>
-            Soldes des congés annuels pour l'année en cours
+            Soldes des congés annuels pour l&apos;année en cours
           </CardDescription>
         </CardHeader>
         <CardContent>

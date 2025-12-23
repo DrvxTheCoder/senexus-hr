@@ -309,8 +309,8 @@ export function ContractFormDialog({
             {contract ? 'Modifier le contrat' : 'Créer un nouveau contrat'}
           </DialogTitle>
           <DialogDescription>
-            Remplissez les informations du contrat. Les champs marqués d'un *
-            sont obligatoires.
+            Remplissez les informations du contrat. Les champs marqués d&apos;un
+            * sont obligatoires.
           </DialogDescription>
         </DialogHeader>
 
@@ -525,7 +525,7 @@ export function ContractFormDialog({
               </div>
 
               <div className='space-y-2'>
-                <Label>Fin période d'essai</Label>
+                <Label>Fin période d&apos;essai</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button

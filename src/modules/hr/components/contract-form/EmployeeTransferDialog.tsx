@@ -203,7 +203,7 @@ export function EmployeeTransferDialog({
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <ArrowRightLeft className='h-5 w-5' />
-            Transférer l'employé
+            Transférer l&apos;employé
           </DialogTitle>
           <DialogDescription>
             Transférer {employee.firstName} {employee.lastName} (
@@ -216,9 +216,9 @@ export function EmployeeTransferDialog({
             <Alert>
               <Info className='h-4 w-4' />
               <AlertDescription>
-                Ce transfert est utilisé lorsqu'un employé a atteint la limite
-                de 24 mois cumulés en contrat intérimaire et doit être transféré
-                vers une autre entreprise du groupe.
+                Ce transfert est utilisé lorsqu&apos;un employé a atteint la
+                limite de 24 mois cumulés en contrat intérimaire et doit être
+                transféré vers une autre entreprise du groupe.
               </AlertDescription>
             </Alert>
 
@@ -307,7 +307,7 @@ export function EmployeeTransferDialog({
               </div>
 
               <div className='space-y-2'>
-                <Label htmlFor='effectiveDate'>Date d'effet *</Label>
+                <Label htmlFor='effectiveDate'>Date d&apos;effet *</Label>
                 <input
                   id='effectiveDate'
                   type='date'
@@ -366,8 +366,8 @@ export function EmployeeTransferDialog({
                 htmlFor='createContract'
                 className='cursor-pointer text-sm font-normal'
               >
-                Créer automatiquement un nouveau contrat dans l'entreprise de
-                destination
+                Créer automatiquement un nouveau contrat dans l&apos;entreprise
+                de destination
               </Label>
             </div>
           </div>

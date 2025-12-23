@@ -146,7 +146,8 @@ export function ContractTerminationDialog({
                 required
               />
               <p className='text-muted-foreground text-xs'>
-                Cette information sera enregistrée dans l'historique du contrat
+                Cette information sera enregistrée dans l&apos;historique du
+                contrat
               </p>
             </div>
           </div>

@@ -590,7 +590,7 @@ export default function EmployeeDetailsPage() {
                 <div>
                   <h3 className='text-lg font-semibold'>Contrats</h3>
                   <p className='text-muted-foreground text-sm'>
-                    Liste des contrats de l'employé
+                    Liste des contrats de l&apos;employé
                   </p>
                 </div>
                 <div className='flex gap-2'>
