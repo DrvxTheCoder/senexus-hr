@@ -32,7 +32,8 @@ const baseConfig: NextConfig = {
       }
     ]
   },
-  transpilePackages: ['geist']
+  transpilePackages: ['geist'],
+  output: 'standalone' // Enable standalone output for Docker
 };
 
 let configWithPlugins = baseConfig;
