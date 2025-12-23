@@ -42,8 +42,10 @@ interface Contract {
   endDate: string | null;
   employeeId: string;
   employee: {
+    id: string;
     firstName: string;
     lastName: string;
+    matricule: string;
   };
 }
 
@@ -456,7 +458,12 @@ export function ContractRenewalDialog({
         <EmployeeTransferDialog
           open={showTransferDialog}
           onOpenChange={setShowTransferDialog}
-          employeeId={contract.employeeId}
+          employee={{
+            id: contract.employeeId,
+            firstName: contract.employee.firstName,
+            lastName: contract.employee.lastName,
+            matricule: contract.employee.matricule
+          }}
           onSuccess={onSuccess}
         />
       )}

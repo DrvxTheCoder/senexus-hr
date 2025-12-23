@@ -98,8 +98,10 @@ interface Contract {
   clientFirm: { id: string; name: string } | null;
   employeeId: string;
   employee: {
+    id: string;
     firstName: string;
     lastName: string;
+    matricule: string;
   };
 }
 

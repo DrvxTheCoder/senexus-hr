@@ -62,6 +62,7 @@ export async function GET(
         employeeId: true,
         employee: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
             matricule: true
