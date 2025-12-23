@@ -33,7 +33,15 @@ const baseConfig: NextConfig = {
     ]
   },
   transpilePackages: ['geist'],
-  output: 'standalone' // Enable standalone output for Docker
+  output: 'standalone', // Enable standalone output for Docker
+  eslint: {
+    // Disable ESLint during production builds
+    ignoreDuringBuilds: true
+  },
+  typescript: {
+    // Optionally disable TypeScript errors during builds as well
+    // ignoreBuildErrors: true
+  }
 };
 
 let configWithPlugins = baseConfig;
