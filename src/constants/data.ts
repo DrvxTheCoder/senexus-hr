@@ -28,21 +28,21 @@ export function getCoreNavItems(firmSlug: string): NavItem[] {
       isActive: false,
       shortcut: ['d', 'd'],
       items: []
-    },
-    {
-      title: 'Compte',
-      url: '#',
-      icon: 'billing',
-      isActive: false,
-      items: [
-        {
-          title: 'Profil',
-          url: `/${firmSlug}/dashboard/profile`,
-          icon: 'userPen',
-          shortcut: ['p', 'p']
-        }
-      ]
     }
+    // {
+    //   title: 'Compte',
+    //   url: '#',
+    //   icon: 'billing',
+    //   isActive: false,
+    //   items: [
+    //     {
+    //       title: 'Profil',
+    //       url: `/${firmSlug}/dashboard/profile`,
+    //       icon: 'userPen',
+    //       shortcut: ['p', 'p']
+    //     }
+    //   ]
+    // }
   ];
 }
 
