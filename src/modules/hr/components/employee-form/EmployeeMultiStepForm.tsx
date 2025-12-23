@@ -9,7 +9,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { z } from 'zod';
 import { StepSidebar } from './StepSidebar';
 import { FormWrapper } from './FormWrapper';

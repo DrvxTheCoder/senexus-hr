@@ -8,7 +8,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'motion/react';
 import { z } from 'zod';
 import { StepSidebar } from '@/modules/hr/components/employee-form/StepSidebar';
 import { FormWrapper } from '@/modules/hr/components/employee-form/FormWrapper';
