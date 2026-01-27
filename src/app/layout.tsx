@@ -17,7 +17,20 @@ const META_THEME_COLORS = {
 
 export const metadata: Metadata = {
   title: 'Senexus Multi-App',
-  description: 'La plateforme tout-en-un pour gérer votre entreprise'
+  description: 'La plateforme tout-en-un pour gérer votre entreprise',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Senexus'
+  },
+  formatDetection: {
+    telephone: false
+  },
+  icons: {
+    icon: '/assets/img/logos/senexus-mini.png',
+    apple: '/assets/img/logos/senexus-mini.png'
+  }
 };
 
 export const viewport: Viewport = {
