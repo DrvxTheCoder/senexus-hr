@@ -247,6 +247,7 @@ class ModuleRegistry {
       ADMIN: 4,
       MANAGER: 3,
       STAFF: 2,
+      RESPONSABLE: 2,
       VIEWER: 1
     };
 

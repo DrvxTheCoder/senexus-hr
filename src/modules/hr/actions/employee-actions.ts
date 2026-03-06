@@ -50,6 +50,18 @@ export async function getEmployees(
 
     const where: any = { firmId };
 
+    // Restricted roles: filter employees by assigned clients only
+    const isRestrictedRole = !['OWNER', 'ADMIN', 'MANAGER'].includes(
+      userFirm.role
+    );
+    if (isRestrictedRole) {
+      const assignments = await db.userClientAssignment.findMany({
+        where: { userId: session.user.id, firmId },
+        select: { clientId: true }
+      });
+      where.assignedClientId = { in: assignments.map((a) => a.clientId) };
+    }
+
     if (filters?.status) {
       where.status = filters.status;
     }

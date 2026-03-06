@@ -45,7 +45,7 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    return NextResponse.json(firm);
+    return NextResponse.json({ ...firm, userRole: userFirm.role });
   } catch (error) {
     console.error('Error fetching firm:', error);
     return NextResponse.json(

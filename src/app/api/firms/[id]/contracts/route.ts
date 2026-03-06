@@ -22,6 +22,7 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '10');
     const status = searchParams.get('status');
     const type = searchParams.get('type');
+    const search = searchParams.get('search');
     const employeeId = searchParams.get('employeeId');
     const sortBy = searchParams.get('sortBy') || 'startDate';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
@@ -55,6 +56,16 @@ export async function GET(
 
     if (employeeId) {
       where.employeeId = employeeId;
+    }
+
+    if (search) {
+      where.employee = {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { matricule: { contains: search, mode: 'insensitive' } }
+        ]
+      };
     }
 
     // Fetch contracts with pagination

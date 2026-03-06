@@ -73,6 +73,7 @@ export default function EmployeesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [firmId, setFirmId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -112,7 +113,7 @@ export default function EmployeesPage() {
     }
   });
 
-  // Fetch firmId from slug
+  // Fetch firmId and user role from slug
   useEffect(() => {
     async function getFirmId() {
       try {
@@ -120,6 +121,7 @@ export default function EmployeesPage() {
         if (response.ok) {
           const firm = await response.json();
           setFirmId(firm.id);
+          setUserRole(firm.userRole ?? null);
         } else {
           toast.error("Impossible de charger l'organisation");
         }
@@ -307,21 +309,34 @@ export default function EmployeesPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const confirmDelete = async () => {
+  const canHardDelete = ['OWNER', 'ADMIN'].includes(userRole ?? '');
+
+  const confirmDelete = async (hard = false) => {
     if (!employeeToDelete) return;
 
     try {
-      const result = await deleteEmployee(employeeToDelete.id);
-      if (result.success) {
-        toast.success('Employé supprimé avec succès');
-        setIsDeleteDialogOpen(false);
-        setEmployeeToDelete(null);
-        fetchEmployees();
+      if (hard) {
+        const res = await fetch(`/api/employees/${employeeToDelete.id}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Erreur lors de la suppression');
+        }
+        toast.success('Employé supprimé définitivement');
       } else {
-        toast.error(result.error || 'Erreur lors de la suppression');
+        const result = await deleteEmployee(employeeToDelete.id);
+        if (!result.success)
+          throw new Error(result.error || 'Erreur lors de la suppression');
+        toast.success('Employé marqué comme terminé');
       }
+      setIsDeleteDialogOpen(false);
+      setEmployeeToDelete(null);
+      fetchEmployees();
     } catch (error) {
-      toast.error('Erreur lors de la suppression');
+      toast.error(
+        error instanceof Error ? error.message : 'Erreur lors de la suppression'
+      );
     }
   };
 
@@ -741,10 +756,17 @@ export default function EmployeesPage() {
                   {employeeToDelete.matricule})
                 </div>
               )}
-              <div className='mt-2 text-sm text-orange-600'>
-                Note: L&apos;employé sera marqué comme TERMINÉ au lieu
-                d&apos;être supprimé définitivement.
-              </div>
+              {canHardDelete ? (
+                <div className='text-muted-foreground mt-2 text-sm'>
+                  Choisissez entre marquer l&apos;employé comme terminé ou le
+                  supprimer définitivement de la base de données.
+                </div>
+              ) : (
+                <div className='mt-2 text-sm text-orange-600'>
+                  Note: L&apos;employé sera marqué comme TERMINÉ au lieu
+                  d&apos;être supprimé définitivement.
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -754,9 +776,14 @@ export default function EmployeesPage() {
             >
               Annuler
             </Button>
-            <Button variant='destructive' onClick={confirmDelete}>
-              Supprimer
+            <Button variant='secondary' onClick={() => confirmDelete(false)}>
+              Marquer comme terminé
             </Button>
+            {canHardDelete && (
+              <Button variant='destructive' onClick={() => confirmDelete(true)}>
+                Supprimer définitivement
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

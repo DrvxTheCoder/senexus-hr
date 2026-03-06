@@ -20,7 +20,10 @@
       "Bash(rm:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(find /Users/marcelflan/dev/senexus-new/senexus-hr/src/app/[firmSlug] -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\))",
+      "Bash(pnpm dlx prisma migrate dev --name add_responsable_role_and_user_client_assignments)",
+      "Bash(pnpm prisma migrate dev --name add_responsable_role_and_user_client_assignments)"
     ],
     "deny": [],
     "ask": []

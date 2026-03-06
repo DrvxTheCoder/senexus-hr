@@ -151,7 +151,8 @@ export async function PUT(
     if (body.firstName !== undefined) updateData.firstName = body.firstName;
     if (body.lastName !== undefined) updateData.lastName = body.lastName;
     if (body.matricule !== undefined) updateData.matricule = body.matricule;
-    if (body.photoUrl !== undefined) updateData.photoUrl = body.photoUrl;
+    if (body.photoUrl !== undefined)
+      updateData.photoUrl = body.photoUrl || null;
     if (body.email !== undefined) updateData.email = body.email;
     if (body.phone !== undefined) updateData.phone = body.phone;
     if (body.address !== undefined) updateData.address = body.address;
@@ -177,12 +178,14 @@ export async function PUT(
     if (body.hireDate !== undefined)
       updateData.hireDate = new Date(body.hireDate);
     if (body.contractEndDate !== undefined)
-      updateData.contractEndDate = new Date(body.contractEndDate);
+      updateData.contractEndDate = body.contractEndDate
+        ? new Date(body.contractEndDate)
+        : null;
     if (body.status !== undefined) updateData.status = body.status;
     if (body.departmentId !== undefined)
-      updateData.departmentId = body.departmentId;
+      updateData.departmentId = body.departmentId || null;
     if (body.assignedClientId !== undefined)
-      updateData.assignedClientId = body.assignedClientId;
+      updateData.assignedClientId = body.assignedClientId || null;
 
     // Emergency contact (JSON field)
     if (body.emergencyContact !== undefined)

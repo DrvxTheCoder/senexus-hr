@@ -143,7 +143,6 @@ export function PersonalInfoForm({
             <SelectContent>
               <SelectItem value='MALE'>Homme</SelectItem>
               <SelectItem value='FEMALE'>Femme</SelectItem>
-              <SelectItem value='OTHER'>Autre</SelectItem>
             </SelectContent>
           </Select>
         </div>

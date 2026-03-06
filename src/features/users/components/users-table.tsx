@@ -11,9 +11,10 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Pencil, Trash2, Key } from 'lucide-react';
+import { Plus, Pencil, Trash2, Key, Users } from 'lucide-react';
 import { UserDialog } from './user-dialog';
 import { ChangePasswordDialog } from './change-password-dialog';
+import { UserClientAssignmentsDialog } from './user-client-assignments-dialog';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -54,6 +55,10 @@ export function UsersTable() {
   const [userForPasswordChange, setUserForPasswordChange] = useState<
     string | null
   >(null);
+  const [assignmentsDialogOpen, setAssignmentsDialogOpen] = useState(false);
+  const [userForAssignments, setUserForAssignments] = useState<User | null>(
+    null
+  );
 
   useEffect(() => {
     fetchUsers();
@@ -95,6 +100,16 @@ export function UsersTable() {
   function handlePasswordDialogClose() {
     setPasswordDialogOpen(false);
     setUserForPasswordChange(null);
+  }
+
+  function handleManageClients(user: User) {
+    setUserForAssignments(user);
+    setAssignmentsDialogOpen(true);
+  }
+
+  function handleAssignmentsDialogClose() {
+    setAssignmentsDialogOpen(false);
+    setUserForAssignments(null);
   }
 
   async function handleDelete() {
@@ -204,6 +219,16 @@ export function UsersTable() {
                         >
                           <Key className='h-4 w-4' />
                         </Button>
+                        {user.userFirms.length > 0 && (
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => handleManageClients(user)}
+                            title='Gérer les clients assignés'
+                          >
+                            <Users className='h-4 w-4' />
+                          </Button>
+                        )}
                         <Button
                           variant='ghost'
                           size='icon'
@@ -251,6 +276,16 @@ export function UsersTable() {
           open={passwordDialogOpen}
           onClose={handlePasswordDialogClose}
           userId={userForPasswordChange}
+        />
+      )}
+
+      {userForAssignments && (
+        <UserClientAssignmentsDialog
+          open={assignmentsDialogOpen}
+          onClose={handleAssignmentsDialogClose}
+          userId={userForAssignments.id}
+          userName={userForAssignments.name}
+          userFirms={userForAssignments.userFirms}
         />
       )}
     </>

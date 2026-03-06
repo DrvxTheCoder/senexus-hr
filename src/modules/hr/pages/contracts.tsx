@@ -128,10 +128,17 @@ export default function ContractsPage() {
 
   React.useEffect(() => {
     if (firmId) {
+      setPage(1); // reset to first page on filter change
       fetchContracts();
       fetchStats();
     }
-  }, [firmId, page, statusFilter, typeFilter]);
+  }, [firmId, statusFilter, typeFilter, searchQuery]);
+
+  React.useEffect(() => {
+    if (firmId) {
+      fetchContracts();
+    }
+  }, [firmId, page]);
 
   const fetchFirmId = async () => {
     try {
@@ -157,6 +164,7 @@ export default function ContractsPage() {
 
       if (statusFilter) params.append('status', statusFilter);
       if (typeFilter) params.append('type', typeFilter);
+      if (searchQuery) params.append('search', searchQuery);
 
       const res = await fetch(`/api/firms/${firmId}/contracts?${params}`);
       if (res.ok) {
@@ -175,76 +183,90 @@ export default function ContractsPage() {
     if (!firmId) return;
 
     try {
-      // Fetch all contracts to calculate stats
       const res = await fetch(`/api/firms/${firmId}/contracts?limit=1000`);
       if (res.ok) {
         const data = await res.json();
-        const allContracts = data.contracts;
+        const allContracts: Contract[] = data.contracts;
+        const now = new Date();
 
-        const active = allContracts.filter(
-          (c: Contract) => c.status === 'ACTIVE'
-        ).length;
-        const expired = allContracts.filter(
-          (c: Contract) => c.status === 'EXPIRED'
-        ).length;
-
-        // Calculate expiring soon (within 30 days)
-        const expiringSoon = allContracts.filter((c: Contract) => {
-          if (c.status === 'ACTIVE' && c.endDate) {
-            const daysUntilExpiry = differenceInDays(
-              new Date(c.endDate),
-              new Date()
-            );
-            return daysUntilExpiry > 0 && daysUntilExpiry <= 30;
-          }
-          return false;
+        // Use computed status (not DB status) for accurate stats
+        const active = allContracts.filter((c) => {
+          const effective = getEffectiveStatus(c);
+          return effective === 'ACTIVE';
         }).length;
 
-        setStats({
-          active,
-          expiringSoon,
-          expired,
-          total: allContracts.length
-        });
+        const expiringSoon = allContracts.filter((c) => {
+          const effective = getEffectiveStatus(c);
+          return effective === 'EXPIRING_SOON' || effective === 'EXPIRING';
+        }).length;
+
+        const expired = allContracts.filter((c) => {
+          const effective = getEffectiveStatus(c);
+          return effective === 'EXPIRED';
+        }).length;
+
+        setStats({ active, expiringSoon, expired, total: allContracts.length });
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<
-      string,
-      {
-        variant: 'default' | 'secondary' | 'destructive' | 'outline';
-        color: string;
-      }
-    > = {
+  // Compute the effective display status from dates (ignores stale DB status for ACTIVE contracts)
+  const getEffectiveStatus = (contract: Contract) => {
+    if (contract.status === 'TERMINATED') return 'TERMINATED';
+    if (contract.status === 'RENEWED') return 'RENEWED';
+
+    // For ACTIVE (and EXPIRED in DB), recompute from endDate
+    if (!contract.endDate) return 'ACTIVE'; // CDI — no end date
+
+    const days = differenceInDays(new Date(contract.endDate), new Date());
+    if (days < 0) return 'EXPIRED';
+    if (days <= 30) return 'EXPIRING_SOON';
+    if (days <= 90) return 'EXPIRING';
+    return 'ACTIVE';
+  };
+
+  const getStatusBadge = (contract: Contract) => {
+    const effective = getEffectiveStatus(contract);
+    const config: Record<string, { color: string; label: string }> = {
       ACTIVE: {
-        variant: 'default',
-        color: 'bg-green-100 text-green-800 border-green-200'
+        color: 'bg-green-100 text-green-800 border-green-200',
+        label: 'Actif'
+      },
+      EXPIRING: {
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        label: 'Expire bientôt'
+      },
+      EXPIRING_SOON: {
+        color: 'bg-orange-100 text-orange-800 border-orange-200',
+        label: 'Urgent'
       },
       EXPIRED: {
-        variant: 'destructive',
-        color: 'bg-red-100 text-red-800 border-red-200'
+        color: 'bg-red-100 text-red-800 border-red-200',
+        label: 'Expiré'
       },
       TERMINATED: {
-        variant: 'secondary',
-        color: 'bg-gray-100 text-gray-800 border-gray-200'
+        color: 'bg-gray-100 text-gray-800 border-gray-200',
+        label: 'Résilié'
       },
       RENEWED: {
-        variant: 'outline',
-        color: 'bg-blue-100 text-blue-800 border-blue-200'
+        color: 'bg-blue-100 text-blue-800 border-blue-200',
+        label: 'Renouvelé'
       }
     };
-    const config = variants[status] || variants.ACTIVE;
+    const { color, label } = config[effective] ?? config.ACTIVE;
     return (
-      <Badge className={config.color}>
-        {status === 'ACTIVE' && <CheckCircle2 className='mr-1 h-3 w-3' />}
-        {status === 'EXPIRED' && <XCircle className='mr-1 h-3 w-3' />}
-        {status === 'TERMINATED' && <XCircle className='mr-1 h-3 w-3' />}
-        {status === 'RENEWED' && <RefreshCw className='mr-1 h-3 w-3' />}
-        {status}
+      <Badge className={`${color} border`}>
+        {effective === 'ACTIVE' && <CheckCircle2 className='mr-1 h-3 w-3' />}
+        {(effective === 'EXPIRED' || effective === 'TERMINATED') && (
+          <XCircle className='mr-1 h-3 w-3' />
+        )}
+        {(effective === 'EXPIRING' || effective === 'EXPIRING_SOON') && (
+          <AlertTriangle className='mr-1 h-3 w-3' />
+        )}
+        {effective === 'RENEWED' && <RefreshCw className='mr-1 h-3 w-3' />}
+        {label}
       </Badge>
     );
   };
@@ -271,44 +293,28 @@ export default function ContractsPage() {
     return `${months} mois`;
   };
 
-  const getWarningIfNeeded = (contract: Contract) => {
-    if (contract.status !== 'ACTIVE' || !contract.endDate) return null;
-
-    const daysUntilExpiry = differenceInDays(
-      new Date(contract.endDate),
-      new Date()
-    );
-
-    if (daysUntilExpiry <= 0) {
+  const getDaysLabel = (contract: Contract) => {
+    if (!contract.endDate) return null;
+    const days = differenceInDays(new Date(contract.endDate), new Date());
+    const effective = getEffectiveStatus(contract);
+    if (effective === 'EXPIRED') {
       return (
         <div className='flex items-center gap-1 text-xs text-red-600'>
           <AlertTriangle className='h-3 w-3' />
-          Expiré
+          Expiré depuis {Math.abs(days)} jour{Math.abs(days) > 1 ? 's' : ''}
         </div>
       );
     }
-
-    if (daysUntilExpiry <= 30) {
+    if (effective === 'EXPIRING_SOON' || effective === 'EXPIRING') {
       return (
         <div className='flex items-center gap-1 text-xs text-orange-600'>
           <AlertTriangle className='h-3 w-3' />
-          Expire dans {daysUntilExpiry} jour{daysUntilExpiry > 1 ? 's' : ''}
+          Expire dans {days} jour{days > 1 ? 's' : ''}
         </div>
       );
     }
-
     return null;
   };
-
-  const filteredContracts = contracts.filter((contract) => {
-    const searchLower = searchQuery.toLowerCase();
-    const employeeName =
-      `${contract.employee.firstName} ${contract.employee.lastName}`.toLowerCase();
-    const matricule = contract.employee.matricule.toLowerCase();
-    return (
-      employeeName.includes(searchLower) || matricule.includes(searchLower)
-    );
-  });
 
   if (loading && contracts.length === 0) {
     return (
@@ -440,7 +446,7 @@ export default function ContractsPage() {
       </Card>
 
       {/* Contract Cards Grid */}
-      {filteredContracts.length === 0 ? (
+      {contracts.length === 0 ? (
         <Card>
           <CardContent className='flex flex-col items-center justify-center py-16'>
             <FileText className='text-muted-foreground mb-4 h-12 w-12' />
@@ -460,7 +466,7 @@ export default function ContractsPage() {
       ) : (
         <>
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-            {filteredContracts.map((contract) => {
+            {contracts.map((contract) => {
               const initials =
                 `${contract.employee.firstName[0]}${contract.employee.lastName[0]}`.toUpperCase();
               return (
@@ -516,7 +522,9 @@ export default function ContractsPage() {
                             <Edit className='mr-2 h-4 w-4' />
                             Modifier
                           </DropdownMenuItem>
-                          {contract.status === 'ACTIVE' && (
+                          {['ACTIVE', 'EXPIRING', 'EXPIRING_SOON'].includes(
+                            getEffectiveStatus(contract)
+                          ) && (
                             <>
                               <DropdownMenuItem
                                 onClick={() => {
@@ -545,7 +553,7 @@ export default function ContractsPage() {
                   <CardContent className='space-y-3'>
                     <div className='flex items-center gap-2'>
                       {getContractTypeBadge(contract.type)}
-                      {getStatusBadge(contract.status)}
+                      {getStatusBadge(contract)}
                     </div>
 
                     {contract.position && (
@@ -584,7 +592,7 @@ export default function ContractsPage() {
                       </div>
                     )}
 
-                    {getWarningIfNeeded(contract)}
+                    {getDaysLabel(contract)}
                   </CardContent>
                 </Card>
               );
