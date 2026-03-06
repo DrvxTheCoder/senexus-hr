@@ -21,7 +21,7 @@ import { is } from 'zod/v4/locales';
 export function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/select-firm';
 
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
