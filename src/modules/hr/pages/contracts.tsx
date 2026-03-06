@@ -420,6 +420,9 @@ export default function ContractsPage() {
               <SelectContent>
                 <SelectItem value='ALL'>Tous les statuts</SelectItem>
                 <SelectItem value='ACTIVE'>Actif</SelectItem>
+                <SelectItem value='EXPIRING'>
+                  Expire bientôt (&lt;90j)
+                </SelectItem>
                 <SelectItem value='EXPIRED'>Expiré</SelectItem>
                 <SelectItem value='TERMINATED'>Terminé</SelectItem>
                 <SelectItem value='RENEWED'>Renouvelé</SelectItem>

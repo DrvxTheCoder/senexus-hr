@@ -47,7 +47,35 @@ export async function GET(
     };
 
     if (status) {
-      where.status = status as any;
+      const now = new Date();
+      const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const in90Days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+
+      switch (status) {
+        case 'TERMINATED':
+          where.status = 'TERMINATED';
+          break;
+        case 'RENEWED':
+          where.status = 'RENEWED';
+          break;
+        case 'EXPIRED':
+          // Not terminated/renewed AND endDate is in the past
+          where.status = { notIn: ['TERMINATED', 'RENEWED'] };
+          where.endDate = { lt: now };
+          break;
+        case 'EXPIRING':
+          // Not terminated/renewed AND endDate within next 90 days
+          where.status = { notIn: ['TERMINATED', 'RENEWED'] };
+          where.endDate = { gte: now, lte: in90Days };
+          break;
+        case 'ACTIVE':
+          // Not terminated/renewed AND (no endDate or endDate > 90 days from now)
+          where.status = { notIn: ['TERMINATED', 'RENEWED'] };
+          where.OR = [{ endDate: null }, { endDate: { gt: in90Days } }];
+          break;
+        default:
+          where.status = status as any;
+      }
     }
 
     if (type) {

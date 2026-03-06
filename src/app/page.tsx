@@ -6,5 +6,5 @@ export default async function Page() {
   // } else {
   //   redirect('/dashboard/overview');
   // }
-  redirect('/dashboard/overview');
+  redirect('/select-firm');
 }
