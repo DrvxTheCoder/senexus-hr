@@ -156,19 +156,6 @@ export default function CRMDashboard() {
 
         <Card>
           <CardHeader className='flex flex-row items-center justify-between pb-2'>
-            <CardTitle className='text-sm font-medium'>Prospects</CardTitle>
-            <TrendingUp className='text-muted-foreground h-4 w-4' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-blue-600'>
-              {loading ? '—' : s?.prospects}
-            </div>
-            <p className='text-muted-foreground mt-1 text-xs'>En prospection</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between pb-2'>
             <CardTitle className='text-sm font-medium'>
               Employés placés
             </CardTitle>

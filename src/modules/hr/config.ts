@@ -27,7 +27,12 @@ export const hrModuleConfig: ModuleConfig = {
   version: '2.0.0',
   icon: Users,
   basePath: '/hr',
-  permissions: [FirmRole.OWNER, FirmRole.ADMIN, FirmRole.MANAGER],
+  permissions: [
+    FirmRole.OWNER,
+    FirmRole.ADMIN,
+    FirmRole.MANAGER,
+    FirmRole.STAFF
+  ],
   healthCheck: '/api/health',
   isSystem: true,
   routes: [

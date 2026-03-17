@@ -345,6 +345,7 @@ model Contract {
   workingHours      Int?
   trialPeriodEnd    DateTime?
   notes             String?
+  isVise            Boolean        @default(false)
   isActive          Boolean        @default(true)
   terminationDate   DateTime?
   terminationReason String?

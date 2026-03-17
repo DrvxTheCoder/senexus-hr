@@ -169,7 +169,7 @@ export default function ClientsPage() {
       address: '',
       industry: '',
       tags: [],
-      status: 'PROSPECT',
+      status: 'ACTIVE',
       notes: ''
     });
     setIsDialogOpen(true);
@@ -263,16 +263,6 @@ export default function ClientsPage() {
           <CardContent>
             <div className='text-2xl font-bold text-green-600'>
               {stats.active}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-sm font-medium'>Prospects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-blue-600'>
-              {stats.prospect}
             </div>
           </CardContent>
         </Card>

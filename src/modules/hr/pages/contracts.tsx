@@ -70,6 +70,7 @@ interface Contract {
   position: string | null;
   salary: string | null;
   isActive: boolean;
+  isVise: boolean;
   renewedFromId: string | null;
   employeeId: string;
   employee: {
@@ -90,6 +91,8 @@ interface ContractStats {
   expiringSoon: number;
   expired: number;
   total: number;
+  vise: number;
+  nonVise: number;
 }
 
 export default function ContractsPage() {
@@ -103,7 +106,9 @@ export default function ContractsPage() {
     active: 0,
     expiringSoon: 0,
     expired: 0,
-    total: 0
+    total: 0,
+    vise: 0,
+    nonVise: 0
   });
   const [loading, setLoading] = React.useState(true);
   const [page, setPage] = React.useState(1);
@@ -205,7 +210,17 @@ export default function ContractsPage() {
           return effective === 'EXPIRED';
         }).length;
 
-        setStats({ active, expiringSoon, expired, total: allContracts.length });
+        const vise = allContracts.filter((c) => c.isVise).length;
+        const nonVise = allContracts.filter((c) => !c.isVise).length;
+
+        setStats({
+          active,
+          expiringSoon,
+          expired,
+          total: allContracts.length,
+          vise,
+          nonVise
+        });
       }
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -346,7 +361,7 @@ export default function ContractsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className='grid gap-4 md:grid-cols-4'>
+      <div className='grid gap-4 md:grid-cols-3 lg:grid-cols-6'>
         <Card>
           <CardHeader className='pb-2'>
             <CardTitle className='text-sm font-medium'>
@@ -393,6 +408,24 @@ export default function ContractsPage() {
           <CardContent>
             <div className='text-2xl font-bold'>{stats.total}</div>
             <p className='text-muted-foreground mt-1 text-xs'>Tous statuts</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className='pb-2'>
+            <CardTitle className='text-sm font-medium'>Visés</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold text-blue-600'>{stats.vise}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className='pb-2'>
+            <CardTitle className='text-sm font-medium'>Non-visés</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold text-yellow-600'>
+              {stats.nonVise}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -554,9 +587,18 @@ export default function ContractsPage() {
                     </div>
                   </CardHeader>
                   <CardContent className='space-y-3'>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
                       {getContractTypeBadge(contract.type)}
                       {getStatusBadge(contract)}
+                      <Badge
+                        className={
+                          contract.isVise
+                            ? 'border border-blue-200 bg-blue-100 text-blue-800'
+                            : 'border border-yellow-200 bg-yellow-100 text-yellow-800'
+                        }
+                      >
+                        {contract.isVise ? 'Visé' : 'Non-visé'}
+                      </Badge>
                     </div>
 
                     {contract.position && (

@@ -168,7 +168,8 @@ export async function PUT(
           ? new Date(body.trialPeriodEnd)
           : null,
         notes: body.notes,
-        alertThreshold: body.alertThreshold
+        alertThreshold: body.alertThreshold,
+        isVise: body.isVise !== undefined ? body.isVise : undefined
       },
       include: {
         employee: {

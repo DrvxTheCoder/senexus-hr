@@ -82,6 +82,22 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Restricted roles: verify user has access to this employee's client
+    const isRestrictedRole = !['OWNER', 'ADMIN'].includes(userFirm.role);
+    if (isRestrictedRole) {
+      const assignments = await db.userClientAssignment.findMany({
+        where: { userId: session.user.id, firmId: employee.firmId },
+        select: { clientId: true }
+      });
+      const assignedClientIds = assignments.map((a) => a.clientId);
+      if (
+        !employee.assignedClientId ||
+        !assignedClientIds.includes(employee.assignedClientId)
+      ) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
     // Convert Decimal fields to strings for JSON serialization
     const serialized = {
       ...employee,

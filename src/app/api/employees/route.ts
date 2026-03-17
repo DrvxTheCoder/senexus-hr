@@ -53,10 +53,21 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const isRestrictedRole = !['OWNER', 'ADMIN'].includes(userFirm.role);
+    const employeeWhere: any = { firmId };
+
+    if (isRestrictedRole) {
+      const assignments = await db.userClientAssignment.findMany({
+        where: { userId: session.user.id, firmId },
+        select: { clientId: true }
+      });
+      employeeWhere.assignedClientId = {
+        in: assignments.map((a) => a.clientId)
+      };
+    }
+
     const employees = await db.employee.findMany({
-      where: {
-        firmId
-      },
+      where: employeeWhere,
       include: {
         department: true,
         assignedClient: true,

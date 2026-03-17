@@ -50,9 +50,7 @@ export async function getClients(
     const where: any = { firmId };
 
     // Restricted roles: filter clients by user assignments only
-    const isRestrictedRole = !['OWNER', 'ADMIN', 'MANAGER'].includes(
-      userFirm.role
-    );
+    const isRestrictedRole = !['OWNER', 'ADMIN'].includes(userFirm.role);
     if (isRestrictedRole) {
       const assignments = await db.userClientAssignment.findMany({
         where: { userId: session.user.id, firmId },

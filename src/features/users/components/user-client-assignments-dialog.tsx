@@ -143,8 +143,8 @@ export function UserClientAssignmentsDialog({
         <DialogHeader>
           <DialogTitle>Clients assignés — {userName}</DialogTitle>
           <DialogDescription>
-            Sélectionnez les clients que cet utilisateur peut gérer. Les rôles
-            OWNER, ADMIN et MANAGER ont accès à tous les clients par défaut.
+            Sélectionnez les clients que cet utilisateur peut gérer. Seuls les
+            rôles OWNER et ADMIN ont accès à tous les clients par défaut.
           </DialogDescription>
         </DialogHeader>
 

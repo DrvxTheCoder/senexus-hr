@@ -109,6 +109,7 @@ export async function GET(
           position: true,
           salary: true,
           isActive: true,
+          isVise: true,
           renewedFromId: true,
           employeeId: true,
           employee: {
@@ -253,7 +254,8 @@ export async function POST(
           ? new Date(body.trialPeriodEnd)
           : null,
         notes: body.notes,
-        alertThreshold: body.alertThreshold || 30
+        alertThreshold: body.alertThreshold || 30,
+        isVise: body.isVise ?? false
       },
       include: {
         employee: {

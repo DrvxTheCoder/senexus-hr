@@ -51,9 +51,7 @@ export async function getEmployees(
     const where: any = { firmId };
 
     // Restricted roles: filter employees by assigned clients only
-    const isRestrictedRole = !['OWNER', 'ADMIN', 'MANAGER'].includes(
-      userFirm.role
-    );
+    const isRestrictedRole = !['OWNER', 'ADMIN'].includes(userFirm.role);
     if (isRestrictedRole) {
       const assignments = await db.userClientAssignment.findMany({
         where: { userId: session.user.id, firmId },
@@ -157,6 +155,22 @@ export async function getEmployee(employeeId: string): Promise<ActionResponse> {
 
     if (!userFirm) {
       return { success: false, error: 'Accès refusé' };
+    }
+
+    // Restricted roles: verify user has access to this employee's client
+    const isRestrictedRole = !['OWNER', 'ADMIN'].includes(userFirm.role);
+    if (isRestrictedRole) {
+      const assignments = await db.userClientAssignment.findMany({
+        where: { userId: session.user.id, firmId: employee.firmId },
+        select: { clientId: true }
+      });
+      const assignedClientIds = assignments.map((a) => a.clientId);
+      if (
+        !employee.assignedClientId ||
+        !assignedClientIds.includes(employee.assignedClientId)
+      ) {
+        return { success: false, error: 'Accès refusé' };
+      }
     }
 
     return { success: true, data: employee };

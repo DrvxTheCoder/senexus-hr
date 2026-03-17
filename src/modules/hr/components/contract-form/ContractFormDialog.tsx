@@ -35,6 +35,7 @@ import {
   Check,
   ChevronsUpDown
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -108,7 +109,8 @@ export function ContractFormDialog({
       : (null as Date | null),
     clientId: contract?.clientId || '',
     clientFirmId: contract?.clientFirmId || '',
-    notes: contract?.notes || ''
+    notes: contract?.notes || '',
+    isVise: contract?.isVise ?? false
   });
 
   React.useEffect(() => {
@@ -149,7 +151,8 @@ export function ContractFormDialog({
           : null,
         clientId: contract.clientId || '',
         clientFirmId: contract.clientFirmId || '',
-        notes: contract.notes || ''
+        notes: contract.notes || '',
+        isVise: contract.isVise ?? false
       });
     } else if (open && !contract && preSelectedEmployeeId) {
       // Reset form for new contract with pre-selected employee
@@ -164,7 +167,8 @@ export function ContractFormDialog({
         trialPeriodEnd: null,
         clientId: '',
         clientFirmId: '',
-        notes: ''
+        notes: '',
+        isVise: false
       });
     }
   }, [open, contract, preSelectedEmployeeId]);
@@ -625,6 +629,22 @@ export function ContractFormDialog({
                 }
                 placeholder='Informations supplémentaires...'
                 rows={3}
+              />
+            </div>
+
+            {/* Visa status */}
+            <div className='flex items-center justify-between rounded-lg border p-4'>
+              <div className='space-y-0.5'>
+                <Label htmlFor='isVise' className='text-sm font-medium'>
+                  Visé
+                </Label>
+              </div>
+              <Switch
+                id='isVise'
+                checked={formData.isVise}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isVise: checked })
+                }
               />
             </div>
           </div>
