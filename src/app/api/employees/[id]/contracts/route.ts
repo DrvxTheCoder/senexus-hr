@@ -58,6 +58,7 @@ export async function GET(
         workingHours: true,
         trialPeriodEnd: true,
         isActive: true,
+        isVise: true,
         notes: true,
         employeeId: true,
         employee: {

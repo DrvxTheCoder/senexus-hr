@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import {
   Card,
   CardContent,
@@ -35,8 +37,10 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle2,
-  LoaderIcon
+  LoaderIcon,
+  Stamp
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format, differenceInMonths, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { TextShimmer } from 'components/motion-primitives/text-shimmer';
@@ -119,6 +123,11 @@ export default function ContractsPage() {
 
   const [firmId, setFirmId] = React.useState<string | null>(null);
 
+  // Selection state
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = React.useState<string>('');
+  const [bulkLoading, setBulkLoading] = React.useState(false);
+
   // Dialog states
   const [isCreateDialogOpen, setIsCreateDialogOpen] = React.useState(false);
   const [isRenewDialogOpen, setIsRenewDialogOpen] = React.useState(false);
@@ -133,7 +142,8 @@ export default function ContractsPage() {
 
   React.useEffect(() => {
     if (firmId) {
-      setPage(1); // reset to first page on filter change
+      setPage(1);
+      setSelectedIds(new Set()); // clear selection on filter change
       fetchContracts();
       fetchStats();
     }
@@ -144,6 +154,53 @@ export default function ContractsPage() {
       fetchContracts();
     }
   }, [firmId, page]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const allOnPageSelected =
+    contracts.length > 0 && contracts.every((c) => selectedIds.has(c.id));
+
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(contracts.map((c) => c.id)));
+    }
+  };
+
+  const handleBulkApply = async () => {
+    if (!firmId || !bulkAction || selectedIds.size === 0) return;
+    const isVise = bulkAction === 'vise';
+    setBulkLoading(true);
+    try {
+      await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/firms/${firmId}/contracts/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isVise })
+          })
+        )
+      );
+      toast.success(
+        `${selectedIds.size} contrat(s) marqué(s) comme ${isVise ? 'visé' : 'non-visé'}`
+      );
+      setSelectedIds(new Set());
+      setBulkAction('');
+      fetchContracts();
+      fetchStats();
+    } catch {
+      toast.error('Erreur lors de la mise à jour');
+    } finally {
+      setBulkLoading(false);
+    }
+  };
 
   const fetchFirmId = async () => {
     try {
@@ -481,6 +538,64 @@ export default function ContractsPage() {
         </CardContent>
       </Card>
 
+      {/* Bulk action toolbar */}
+      {selectedIds.size > 0 && (
+        <div className='bg-muted/60 flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3'>
+          <Checkbox
+            checked={allOnPageSelected}
+            onCheckedChange={toggleSelectAll}
+            id='select-all'
+          />
+          <label
+            htmlFor='select-all'
+            className='cursor-pointer text-sm font-medium select-none'
+          >
+            {selectedIds.size} contrat{selectedIds.size > 1 ? 's' : ''}{' '}
+            sélectionné{selectedIds.size > 1 ? 's' : ''}
+          </label>
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={() => setSelectedIds(new Set())}
+            className='h-7 text-xs'
+          >
+            Désélectionner tout
+          </Button>
+          <div className='ml-auto flex items-center gap-2'>
+            <Select value={bulkAction} onValueChange={setBulkAction}>
+              <SelectTrigger className='h-8 w-[200px]'>
+                <SelectValue placeholder='Choisir une action…' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='vise'>
+                  <span className='flex items-center gap-2'>
+                    <Stamp className='h-3.5 w-3.5' />
+                    Marquer comme visé
+                  </span>
+                </SelectItem>
+                <SelectItem value='non-vise'>
+                  <span className='flex items-center gap-2'>
+                    <Stamp className='h-3.5 w-3.5 opacity-40' />
+                    Marquer comme non-visé
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              size='sm'
+              className='h-8'
+              disabled={!bulkAction || bulkLoading}
+              onClick={handleBulkApply}
+            >
+              {bulkLoading ? (
+                <LoaderIcon className='mr-2 h-3.5 w-3.5 animate-spin' />
+              ) : null}
+              Appliquer
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Contract Cards Grid */}
       {contracts.length === 0 ? (
         <Card>
@@ -508,11 +623,16 @@ export default function ContractsPage() {
               return (
                 <Card
                   key={contract.id}
-                  className='transition-shadow hover:shadow-lg'
+                  className={`transition-shadow hover:shadow-lg ${selectedIds.has(contract.id) ? 'ring-primary ring-2' : ''}`}
                 >
                   <CardHeader className='pb-3'>
                     <div className='flex items-start justify-between'>
                       <div className='flex flex-1 items-center gap-3'>
+                        <Checkbox
+                          checked={selectedIds.has(contract.id)}
+                          onCheckedChange={() => toggleSelect(contract.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
                         <Avatar className='h-10 w-10'>
                           <AvatarImage src={contract.employee.photoUrl || ''} />
                           <AvatarFallback className='text-sm'>
@@ -521,8 +641,14 @@ export default function ContractsPage() {
                         </Avatar>
                         <div className='min-w-0 flex-1'>
                           <CardTitle className='truncate text-sm font-semibold'>
-                            {contract.employee.firstName}{' '}
-                            {contract.employee.lastName}
+                            <Link
+                              href={`/${firmSlug}/${moduleSlug}/employees/${contract.employee.id}`}
+                              className='hover:text-primary hover:underline'
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {contract.employee.firstName}{' '}
+                              {contract.employee.lastName}
+                            </Link>
                           </CardTitle>
                           <p className='text-muted-foreground truncate text-xs'>
                             {contract.employee.matricule}

@@ -225,6 +225,64 @@ export async function PUT(
   }
 }
 
+// PATCH /api/firms/:id/contracts/:id - Partial update (e.g. isVise toggle)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string; contractId: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id: firmId, contractId } = await params;
+    const body = await req.json();
+
+    const userFirm = await db.userFirm.findUnique({
+      where: { userId_firmId: { userId: session.user.id, firmId } }
+    });
+
+    if (!userFirm || !['OWNER', 'ADMIN', 'MANAGER'].includes(userFirm.role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const existing = await db.contract.findFirst({
+      where: { id: contractId, firmId }
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Contract not found' },
+        { status: 404 }
+      );
+    }
+
+    const data: Record<string, unknown> = {};
+    if (body.isVise !== undefined) data.isVise = body.isVise;
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields to update' },
+        { status: 400 }
+      );
+    }
+
+    const contract = await db.contract.update({
+      where: { id: contractId },
+      data
+    });
+
+    return NextResponse.json({ id: contract.id, isVise: contract.isVise });
+  } catch (error) {
+    console.error('Error patching contract:', error);
+    return NextResponse.json(
+      { error: 'Failed to update contract' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE /api/firms/:id/contracts/:id - Delete contract
 export async function DELETE(
   req: NextRequest,

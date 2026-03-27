@@ -93,6 +93,7 @@ interface Contract {
   position: string | null;
   salary: string | null;
   isActive: boolean;
+  isVise: boolean;
   renewedFromId: string | null;
   client: { id: string; name: string } | null;
   clientFirm: { id: string; name: string } | null;
@@ -626,7 +627,13 @@ export default function EmployeeDetailsPage() {
                           <div className='space-y-1'>
                             <div className='flex items-center gap-2'>
                               {getContractTypeBadge(contract.type)}
-                              {getContractStatusBadge(contract.status)}
+                              <Badge
+                                className={`border ${contract.isVise ? 'border-blue-200 bg-blue-100 text-blue-800' : 'border-yellow-200 bg-yellow-100 text-yellow-800'}`}
+                              >
+                                <small>
+                                  {contract.isVise ? 'Visé' : 'Non-visé'}
+                                </small>
+                              </Badge>
                             </div>
                             <CardTitle className='text-base'>
                               {contract.position || 'Position non spécifiée'}

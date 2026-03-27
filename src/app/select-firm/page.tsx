@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth/auth.config';
 import { db } from '@/lib/db';
 import { FirmSelectionClient } from '@/components/firm-selection-client';
+import { Button } from '@/components/ui/button';
 
 export default async function SelectFirmPage() {
   const session = await getServerSession(authOptions);
@@ -38,6 +39,9 @@ export default async function SelectFirmPage() {
             Veuillez contacter votre administrateur pour obtenir l&apos;accès à
             une entreprise.
           </p>
+          <Button variant={'outline'} className='mt-8'>
+            <a href='/auth/sign-in'>Se déconnecter</a>
+          </Button>
         </div>
       </div>
     );

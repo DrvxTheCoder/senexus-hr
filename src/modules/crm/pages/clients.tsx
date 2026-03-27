@@ -37,12 +37,23 @@ import {
   Building2,
   CheckCircle2,
   XCircle,
-  Eye
+  Eye,
+  MoreHorizontal,
+  Trash2,
+  Pencil
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import {
   getClients,
   createClient,
-  updateClient
+  updateClient,
+  deleteClient
 } from '../actions/client-actions';
 import { ProfilePhotoUpload } from '@/components/profile-photo-upload';
 import { toast } from 'sonner';
@@ -58,8 +69,13 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [firmId, setFirmId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const canDelete = ['OWNER', 'ADMIN'].includes(userRole ?? '');
   const [formData, setFormData] = useState({
     name: '',
     photoUrl: '',
@@ -74,7 +90,7 @@ export default function ClientsPage() {
     notes: ''
   });
 
-  // Fetch firmId from slug
+  // Fetch firmId and userRole from slug
   useEffect(() => {
     async function getFirmId() {
       try {
@@ -82,6 +98,7 @@ export default function ClientsPage() {
         if (response.ok) {
           const firm = await response.json();
           setFirmId(firm.id);
+          setUserRole(firm.userRole ?? null);
         } else {
           toast.error("Impossible de charger l'organisation");
         }
@@ -191,6 +208,26 @@ export default function ClientsPage() {
       notes: client.notes || ''
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteClient = async () => {
+    if (!clientToDelete) return;
+    setDeleteLoading(true);
+    try {
+      const result = await deleteClient(clientToDelete.id);
+      if (result.success) {
+        toast.success('Client supprimé avec succès');
+        setIsDeleteDialogOpen(false);
+        setClientToDelete(null);
+        fetchClients();
+      } else {
+        toast.error(result.error || 'Erreur lors de la suppression');
+      }
+    } catch {
+      toast.error('Une erreur est survenue');
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -345,13 +382,40 @@ export default function ClientsPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant='ghost'
-                        size='sm'
-                        onClick={() => handleEditClient(client)}
-                      >
-                        Modifier
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            className='h-8 w-8'
+                          >
+                            <MoreHorizontal className='h-4 w-4' />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          <DropdownMenuItem
+                            onClick={() => handleEditClient(client)}
+                          >
+                            <Pencil className='mr-2 h-4 w-4' />
+                            Modifier
+                          </DropdownMenuItem>
+                          {canDelete && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className='text-destructive focus:text-destructive'
+                                onClick={() => {
+                                  setClientToDelete(client);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className='mr-2 h-4 w-4' />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -365,6 +429,37 @@ export default function ClientsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className='max-w-md'>
+          <DialogHeader>
+            <DialogTitle>Supprimer le client</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer{' '}
+              <span className='font-semibold'>{clientToDelete?.name}</span> ?
+              Cette action archivera le client. Elle est irréversible si le
+              client a des employés ou contrats associés.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={deleteLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleDeleteClient}
+              disabled={deleteLoading}
+            >
+              {deleteLoading ? 'Suppression...' : 'Supprimer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Client Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
