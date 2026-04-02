@@ -1,115 +1,156 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/9113740/201498864-2a900c64-d88f-4ed4-b5cf-770bcb57e1f5.png">
-  <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/9113740/201498152-b171abb8-9225-487a-821c-6ff49ee48579.png">
-</picture>
+# Senexus MultiAPP
 
-<div align="center"><strong>Next.js Admin Dashboard Starter Template With Shadcn-ui</strong></div>
-<div align="center">Built with the Next.js 15 App Router</div>
-<br />
-<div align="center">
-<a href="https://dub.sh/shadcn-dashboard">View Demo</a>
-<span>
-</div>
+> Plateforme SaaS modulaire multi-tenant pour la gestion des ressources humaines — conçue pour le secteur de l'intérim au Sénégal.
 
-## Overview
+---
 
-This is a starter template using the following stack:
+## À propos
 
-- Framework - [Next.js 15](https://nextjs.org/13)
-- Language - [TypeScript](https://www.typescriptlang.org)
-- Auth - [Clerk](https://go.clerk.com/ILdYhn7)
-- Error tracking - [<picture><img alt="Sentry" src="public/assets/sentry.svg">
-        </picture>](https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy26q2-nextjs&utm_content=github-banner-project-tryfree)
-- Styling - [Tailwind CSS v4](https://tailwindcss.com)
-- Components - [Shadcn-ui](https://ui.shadcn.com)
-- Schema Validations - [Zod](https://zod.dev)
-- State Management - [Zustand](https://zustand-demo.pmnd.rs)
-- Search params state manager - [Nuqs](https://nuqs.47ng.com/)
-- Tables - [Tanstack Data Tables](https://ui.shadcn.com/docs/components/data-table) • [Dice table](https://www.diceui.com/docs/components/data-table)
-- Forms - [React Hook Form](https://ui.shadcn.com/docs/components/form)
-- Command+k interface - [kbar](https://kbar.vercel.app/)
-- Linting - [ESLint](https://eslint.org)
-- Pre-commit Hooks - [Husky](https://typicode.github.io/husky/)
-- Formatting - [Prettier](https://prettier.io)
+**Senexus MultiAPP** est une application web centralisée développée pour le **Groupe Senexus**, composé de :
 
-_If you are looking for a Tanstack start dashboard template, here is the [repo](https://git.new/tanstack-start-dashboard)._
+- **Connect'Intérim** — Agence de travail temporaire et externalisation RH
+- **Synergie Pro** — Société multi-services
+- **IPM Tawfeikh** — Institution de prévoyance maladie
 
-## Pages
+La plateforme permet à chaque entité (appelée *firm*) de gérer ses ressources humaines de manière indépendante tout en partageant une infrastructure commune, avec une isolation stricte des données par tenant.
 
-| Pages                                                                                 | Specifications                                                                                                                                                                                                                                                          |
-| :------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Signup / Signin](https://go.clerk.com/ILdYhn7)      | Authentication with **Clerk** provides secure authentication and user management with multiple sign-in options including passwordless authentication, social logins, and enterprise SSO - all designed to enhance security while delivering a seamless user experience. |
-| [Dashboard (Overview)](https://shadcn-dashboard.kiranism.dev/dashboard)    | Cards with Recharts graphs for analytics. Parallel routes in the overview sections feature independent loading, error handling, and isolated component rendering. |
-| [Product](https://shadcn-dashboard.kiranism.dev/dashboard/product)         | Tanstack tables with server side searching, filter, pagination by Nuqs which is a Type-safe search params state manager in nextjs                                                                                                                                       |
-| [Product/new](https://shadcn-dashboard.kiranism.dev/dashboard/product/new) | A Product Form with shadcn form (react-hook-form + zod).                                                                                                                                                                                                                |
-| [Profile](https://shadcn-dashboard.kiranism.dev/dashboard/profile)         | Clerk's full-featured account management UI that allows users to manage their profile and security settings                                                                                                                                                             |
-| [Kanban Board](https://shadcn-dashboard.kiranism.dev/dashboard/kanban)     | A Drag n Drop task management board with dnd-kit and zustand to persist state locally.                                                                                                                                                                                  |
-| [Not Found](https://shadcn-dashboard.kiranism.dev/dashboard/notfound)      | Not Found Page Added in the root level                                                                                                                                                                                                                                  |
-| [Global Error](https://sentry.io/for/nextjs/?utm_source=github&utm_medium=paid-community&utm_campaign=general-fy26q2-nextjs&utm_content=github-banner-project-tryfree)           | A centralized error page that captures and displays errors across the application. Integrated with **Sentry** to log errors, provide detailed reports, and enable replay functionality for better debugging. |
+---
 
-## Feature based organization
+## Fonctionnalités principales
 
-```plaintext
-src/
-├── app/ # Next.js App Router directory
-│ ├── (auth)/ # Auth route group
-│ │ ├── (signin)/
-│ ├── (dashboard)/ # Dashboard route group
-│ │ ├── layout.tsx
-│ │ ├── loading.tsx
-│ │ └── page.tsx
-│ └── api/ # API routes
-│
-├── components/ # Shared components
-│ ├── ui/ # UI components (buttons, inputs, etc.)
-│ └── layout/ # Layout components (header, sidebar, etc.)
-│
-├── features/ # Feature-based modules
-│ ├── feature/
-│ │ ├── components/ # Feature-specific components
-│ │ ├── actions/ # Server actions
-│ │ ├── schemas/ # Form validation schemas
-│ │ └── utils/ # Feature-specific utilities
-│ │
-├── lib/ # Core utilities and configurations
-│ ├── auth/ # Auth configuration
-│ ├── db/ # Database utilities
-│ └── utils/ # Shared utilities
-│
-├── hooks/ # Custom hooks
-│ └── use-debounce.ts
-│
-├── stores/ # Zustand stores
-│ └── dashboard-store.ts
-│
-└── types/ # TypeScript types
-└── index.ts
-```
+- 🏢 **Multi-tenancy** — Gestion isolée par entité avec switching entre firmes
+- 📦 **Architecture modulaire** — Modules activables/désactivables par firm (RH, CRM, IPM...)
+- 👥 **Gestion des employés** — CRUD complet, contrats, transferts, congés
+- 📊 **Tableaux de bord BI** — KPIs et composants glissables par utilisateur
+- 🔐 **Authentification & RBAC** — Rôles : OWNER, ADMIN, MANAGER, STAFF, VIEWER
+- 📁 **Gestion documentaire** — Upload de fichiers via Zipline (auto-hébergé)
+- 🎨 **Thème par firm** — Couleur d'interface personnalisée par entité
 
-## Getting Started
+---
 
-> [!NOTE]  
-> We are using **Next 15** with **React 19**, follow these steps:
+## Stack technique
 
-Clone the repo:
+| Couche | Technologie |
+|---|---|
+| Framework | Next.js 15 (App Router) |
+| Langage | TypeScript |
+| UI | Shadcn UI + Tailwind CSS |
+| Auth | NextAuth.js (JWT + Credentials) |
+| ORM | Prisma ORM |
+| Base de données | PostgreSQL |
+| Hébergement | Coolify (VPS auto-hébergé) |
+| Upload fichiers | Zipline (auto-hébergé) |
+
+---
+
+## Architecture des modules
+
+Les modules sont auto-découverts depuis `src/modules/`. Chaque module est un dossier autonome contenant sa configuration, ses pages, ses composants et ses API routes.
 
 ```
-git clone https://github.com/Kiranism/next-shadcn-dashboard-starter.git
+src/modules/
+├── hr/           # Module Ressources Humaines
+│   ├── config.ts
+│   ├── pages/
+│   └── components/
+├── crm/          # Module CRM (en cours)
+└── types.ts      # Interfaces communes
 ```
 
-- `pnpm install` ( we have legacy-peer-deps=true added in the .npmrc)
-- Create a `.env.local` file by copying the example environment file:
-  `cp env.example.txt .env.local`
-- Add the required environment variables to the `.env.local` file.
-- `pnpm run dev`
+L'activation d'un module pour une firm se fait via l'interface d'administration — sans modification du code core.
 
-##### Environment Configuration Setup
+---
 
-To configure the environment for this project, refer to the `env.example.txt` file. This file contains the necessary environment variables required for authentication and error tracking.
+## Installation
 
-You should now be able to access the application at http://localhost:3000.
+### Prérequis
 
-> [!WARNING]
-> After cloning or forking the repository, be cautious when pulling or syncing with the latest changes, as this may result in breaking conflicts.
+- Node.js 18+
+- PostgreSQL
+- pnpm (recommandé)
 
-Cheers! 🥂
+### Étapes
+
+```bash
+# 1. Cloner le dépôt
+git clone https://github.com/<votre-org>/senexus-multiapp.git
+cd senexus-multiapp
+
+# 2. Installer les dépendances
+pnpm install
+
+# 3. Configurer les variables d'environnement
+cp env.example.txt .env
+# Remplir les valeurs dans .env
+
+# 4. Appliquer les migrations de base de données
+pnpm prisma migrate deploy
+
+# 5. Seeder les données initiales
+pnpm db:seed
+
+# 6. Lancer le serveur de développement
+pnpm dev
+```
+
+L'application sera disponible sur [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Variables d'environnement
+
+```env
+DATABASE_URL=postgresql://...
+NEXTAUTH_SECRET=...
+NEXTAUTH_URL=http://localhost:3000
+ZIPLINE_URL=...
+ZIPLINE_TOKEN=...
+```
+
+---
+
+## Structure du projet
+
+```
+senexus-multiapp/
+├── prisma/               # Schéma et migrations
+├── src/
+│   ├── app/              # Routes Next.js (App Router)
+│   │   ├── [firmSlug]/   # Routes par firm
+│   │   └── admin/        # Interface d'administration
+│   ├── components/       # Composants UI partagés
+│   ├── core/             # Module registry et logique core
+│   ├── features/         # Fonctionnalités métier (auth, employees...)
+│   ├── lib/              # Utilitaires (db, auth config...)
+│   └── modules/          # Modules métier dynamiques
+└── public/
+```
+
+---
+
+## Statut du développement
+
+| Module | Statut |
+|---|---|
+| Infrastructure core | ✅ Complet |
+| Authentification & RBAC | ✅ Complet |
+| Multi-tenancy | ✅ Complet |
+| Système de modules | ✅ Complet (90%) |
+| Module RH | 🔄 En cours |
+| Module CRM | 🔄 En cours |
+| Tableaux de bord BI | ✅ Fonctionnel |
+| Gestion documentaire | ✅ Fonctionnel |
+
+---
+
+## Contexte académique
+
+Ce projet constitue le support pratique du mémoire de Master en **Business Intelligence & Big Data** à l'**Institut Supérieur de Management (IAM)** de Dakar, intitulé :
+
+> *"Conception et mise en œuvre d'une plateforme SaaS modulaire orientée Business Intelligence pour la gestion des ressources humaines"*
+
+---
+
+## Licence
+
+Usage interne — Groupe Senexus. Tous droits réservés.
