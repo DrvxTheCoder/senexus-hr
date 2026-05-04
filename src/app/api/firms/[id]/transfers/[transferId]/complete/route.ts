@@ -74,6 +74,31 @@ export async function POST(
       );
     }
 
+    // Determine the matricule to use in the destination firm. If the source
+    // matricule already exists in the target firm, a newMatricule is required.
+    const targetMatricule =
+      existingTransfer.newMatricule ?? existingTransfer.employee.matricule;
+
+    const matriculeConflict = await db.employee.findFirst({
+      where: {
+        firmId: existingTransfer.toFirmId,
+        matricule: targetMatricule,
+        NOT: { id: existingTransfer.employeeId }
+      },
+      select: { id: true }
+    });
+
+    if (matriculeConflict) {
+      return NextResponse.json(
+        {
+          error: existingTransfer.newMatricule
+            ? `Le matricule "${targetMatricule}" est déjà utilisé dans l'entreprise de destination. Veuillez en choisir un autre.`
+            : `Le matricule "${targetMatricule}" existe déjà dans l'entreprise de destination. Veuillez définir un nouveau matricule pour ce transfert.`
+        },
+        { status: 409 }
+      );
+    }
+
     // Use a transaction to ensure atomicity
     const result = await db.$transaction(async (tx) => {
       // Terminate all active contracts in source firm
@@ -91,12 +116,15 @@ export async function POST(
         }
       });
 
-      // Update employee's firm
+      // Update employee's firm (and matricule if a new one was set)
       await tx.employee.update({
         where: { id: existingTransfer.employeeId },
         data: {
           firmId: existingTransfer.toFirmId,
-          assignedClientId: existingTransfer.clientId
+          assignedClientId: existingTransfer.clientId,
+          ...(existingTransfer.newMatricule
+            ? { matricule: existingTransfer.newMatricule }
+            : {})
         }
       });
 

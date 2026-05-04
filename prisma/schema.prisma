@@ -380,6 +380,7 @@ model EmployeeTransfer {
   effectiveDate   DateTime
   reason          String
   status          TransferStatus @default(PENDING)
+  newMatricule    String?
   requestedBy     String
   approvedBy      String?
   approvedAt      DateTime?

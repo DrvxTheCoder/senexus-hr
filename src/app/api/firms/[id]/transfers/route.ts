@@ -67,6 +67,7 @@ export async function GET(
           effectiveDate: true,
           reason: true,
           status: true,
+          newMatricule: true,
           notes: true,
           rejectionReason: true,
           approvedAt: true,
@@ -239,6 +240,26 @@ export async function POST(
       );
     }
 
+    const newMatricule =
+      typeof body.newMatricule === 'string' && body.newMatricule.trim()
+        ? body.newMatricule.trim()
+        : null;
+
+    // If a new matricule is provided, ensure it's unique in the target firm
+    if (newMatricule) {
+      const conflict = await db.employee.findFirst({
+        where: { firmId: body.toFirmId, matricule: newMatricule }
+      });
+      if (conflict) {
+        return NextResponse.json(
+          {
+            error: `Le matricule "${newMatricule}" existe déjà dans l'entreprise de destination.`
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     // Create transfer
     const transfer = await db.employeeTransfer.create({
       data: {
@@ -251,6 +272,7 @@ export async function POST(
         reason: body.reason,
         status: 'PENDING',
         requestedBy: session.user.id,
+        newMatricule,
         notes: body.notes || null
       },
       include: {

@@ -159,6 +159,30 @@ export async function PUT(
       );
     }
 
+    let newMatriculeUpdate: string | null | undefined = undefined;
+    if (body.newMatricule !== undefined) {
+      const trimmed =
+        typeof body.newMatricule === 'string' ? body.newMatricule.trim() : '';
+      newMatriculeUpdate = trimmed ? trimmed : null;
+
+      if (newMatriculeUpdate) {
+        const conflict = await db.employee.findFirst({
+          where: {
+            firmId: existingTransfer.toFirmId,
+            matricule: newMatriculeUpdate
+          }
+        });
+        if (conflict) {
+          return NextResponse.json(
+            {
+              error: `Le matricule "${newMatriculeUpdate}" existe déjà dans l'entreprise de destination.`
+            },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
     // Update transfer
     const transfer = await db.employeeTransfer.update({
       where: { id },
@@ -171,7 +195,8 @@ export async function PUT(
           : undefined,
         reason: body.reason,
         notes: body.notes,
-        clientId: body.clientId !== undefined ? body.clientId : undefined
+        clientId: body.clientId !== undefined ? body.clientId : undefined,
+        newMatricule: newMatriculeUpdate
       },
       include: {
         employee: {

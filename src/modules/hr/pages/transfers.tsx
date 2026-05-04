@@ -45,6 +45,7 @@ interface EmployeeTransfer {
   effectiveDate: string;
   reason: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  newMatricule: string | null;
   approvedAt: string | null;
   rejectionReason: string | null;
   notes: string | null;
@@ -402,6 +403,17 @@ export default function TransfersPage() {
                         {format(new Date(transfer.effectiveDate), 'dd/MM/yyyy')}
                       </span>
                     </div>
+
+                    {transfer.newMatricule && (
+                      <div className='text-sm'>
+                        <span className='text-muted-foreground'>
+                          Nouveau matricule:{' '}
+                        </span>
+                        <span className='font-medium'>
+                          {transfer.newMatricule}
+                        </span>
+                      </div>
+                    )}
 
                     {transfer.reason && (
                       <div className='text-sm'>

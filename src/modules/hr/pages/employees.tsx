@@ -31,6 +31,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Plus,
   Search,
@@ -43,7 +44,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Eye
+  Eye,
+  ArrowRightLeft
 } from 'lucide-react';
 import {
   getEmployees,
@@ -57,6 +59,7 @@ import { formatDateFR, formatDuration } from '../utils/date-utils';
 import { toast } from 'sonner';
 import { EmployeeBulkImport } from '../components/employee-bulk-import';
 import { EmployeeMultiStepForm } from '../components/employee-form';
+import { EmployeeBulkTransferDialog } from '../components/contract-form/EmployeeBulkTransferDialog';
 
 type Employee = any;
 type Client = any;
@@ -83,6 +86,10 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null
   );
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkTransferOpen, setIsBulkTransferOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -200,6 +207,90 @@ export default function EmployeesPage() {
   useEffect(() => {
     setCurrentPage(0);
   }, [searchQuery, clientFilter, statusFilter]);
+
+  // Drop selections that are no longer in the filtered list (e.g. when filters change)
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      if (prev.size === 0) return prev;
+      const visibleIds = new Set(filteredEmployees.map((e) => e.id));
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (visibleIds.has(id)) next.add(id);
+        else changed = true;
+      });
+      return changed ? next : prev;
+    });
+  }, [filteredEmployees]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allCurrentPageSelected =
+    paginatedEmployees.length > 0 &&
+    paginatedEmployees.every((e) => selectedIds.has(e.id));
+  const someCurrentPageSelected =
+    paginatedEmployees.some((e) => selectedIds.has(e.id)) &&
+    !allCurrentPageSelected;
+
+  const toggleSelectAllCurrentPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allCurrentPageSelected) {
+        paginatedEmployees.forEach((e) => next.delete(e.id));
+      } else {
+        paginatedEmployees.forEach((e) => next.add(e.id));
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const selectedEmployees = employees.filter((e) => selectedIds.has(e.id));
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setIsBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    const results = await Promise.allSettled(
+      ids.map((id) =>
+        fetch(`/api/employees/${id}`, { method: 'DELETE' }).then(async (r) => {
+          if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP ${r.status}`);
+          }
+        })
+      )
+    );
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.length - succeeded;
+    setIsBulkProcessing(false);
+    setIsBulkDeleteOpen(false);
+
+    if (succeeded > 0) {
+      toast.success(
+        `${succeeded} employé(s) supprimé(s)${failed > 0 ? `, ${failed} en échec` : ''}`
+      );
+    }
+    if (failed > 0 && succeeded === 0) {
+      toast.error(`Échec de la suppression de ${failed} employé(s)`);
+    }
+    clearSelection();
+    fetchEmployees();
+  };
+
+  const handleBulkTransferSuccess = (count: number) => {
+    toast.success(`${count} demande(s) de transfert créée(s)`);
+    clearSelection();
+    fetchEmployees();
+  };
 
   const stats = {
     total: employees.length,
@@ -514,14 +605,67 @@ export default function EmployeesPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {selectedIds.size > 0 && (
+            <div className='bg-muted/50 mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border px-4 py-2'>
+              <div className='text-sm'>
+                <span className='font-medium'>{selectedIds.size}</span>{' '}
+                employé(s) sélectionné(s)
+              </div>
+              <div className='flex items-center gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => setIsBulkTransferOpen(true)}
+                  disabled={isBulkProcessing}
+                >
+                  <ArrowRightLeft className='mr-2 h-4 w-4' />
+                  Transférer
+                </Button>
+                {canHardDelete && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setIsBulkDeleteOpen(true)}
+                    disabled={isBulkProcessing}
+                    className='text-red-600 hover:text-red-700'
+                  >
+                    <Trash2 className='mr-2 h-4 w-4' />
+                    Supprimer
+                  </Button>
+                )}
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  onClick={clearSelection}
+                  disabled={isBulkProcessing}
+                >
+                  Effacer
+                </Button>
+              </div>
+            </div>
+          )}
           {loading ? (
             <div className='py-8 text-center'>Chargement...</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Matricule</TableHead>
+                  <TableHead className='w-10'>
+                    <Checkbox
+                      checked={
+                        allCurrentPageSelected
+                          ? true
+                          : someCurrentPageSelected
+                            ? 'indeterminate'
+                            : false
+                      }
+                      onCheckedChange={toggleSelectAllCurrentPage}
+                      aria-label='Tout sélectionner'
+                    />
+                  </TableHead>
+
                   <TableHead>Nom</TableHead>
+                  <TableHead>Matricule</TableHead>
                   <TableHead>Département</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Statut</TableHead>
@@ -547,7 +691,19 @@ export default function EmployeesPage() {
                     `${emp.firstName?.[0] || ''}${emp.lastName?.[0] || ''}`.toUpperCase();
 
                   return (
-                    <TableRow key={emp.id}>
+                    <TableRow
+                      key={emp.id}
+                      data-state={
+                        selectedIds.has(emp.id) ? 'selected' : undefined
+                      }
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(emp.id)}
+                          onCheckedChange={() => toggleSelect(emp.id)}
+                          aria-label={`Sélectionner ${emp.firstName} ${emp.lastName}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className='flex items-center gap-3'>
                           <Avatar className='h-8 w-8' key={emp.photoUrl}>
@@ -743,6 +899,51 @@ export default function EmployeesPage() {
         />
       )}
 
+      {/* Bulk Transfer Dialog */}
+      <EmployeeBulkTransferDialog
+        open={isBulkTransferOpen}
+        onOpenChange={setIsBulkTransferOpen}
+        employees={selectedEmployees.map((e) => ({
+          id: e.id,
+          firstName: e.firstName,
+          lastName: e.lastName,
+          matricule: e.matricule
+        }))}
+        onSuccess={handleBulkTransferSuccess}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={isBulkDeleteOpen} onOpenChange={setIsBulkDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer plusieurs employés</DialogTitle>
+            <DialogDescription>
+              Vous êtes sur le point de supprimer définitivement{' '}
+              <span className='font-medium'>{selectedIds.size}</span>{' '}
+              employé(s). Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setIsBulkDeleteOpen(false)}
+              disabled={isBulkProcessing}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant='destructive'
+              onClick={handleBulkDelete}
+              disabled={isBulkProcessing}
+            >
+              {isBulkProcessing
+                ? 'Suppression...'
+                : `Supprimer ${selectedIds.size} employé(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
@@ -776,9 +977,9 @@ export default function EmployeesPage() {
             >
               Annuler
             </Button>
-            <Button variant='secondary' onClick={() => confirmDelete(false)}>
+            {/* <Button variant='secondary' onClick={() => confirmDelete(false)}>
               Marquer comme terminé
-            </Button>
+            </Button> */}
             {canHardDelete && (
               <Button variant='destructive' onClick={() => confirmDelete(true)}>
                 Supprimer définitivement

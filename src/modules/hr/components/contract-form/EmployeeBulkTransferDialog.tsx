@@ -20,9 +20,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertTriangle, Loader2, ArrowRightLeft, Info } from 'lucide-react';
 
 interface Employee {
@@ -43,19 +42,19 @@ interface Client {
   name: string;
 }
 
-interface EmployeeTransferDialogProps {
+interface EmployeeBulkTransferDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  employee: Employee | null;
-  onSuccess?: () => void;
+  employees: Employee[];
+  onSuccess?: (succeededCount: number) => void;
 }
 
-export function EmployeeTransferDialog({
+export function EmployeeBulkTransferDialog({
   open,
   onOpenChange,
-  employee,
+  employees,
   onSuccess
-}: EmployeeTransferDialogProps) {
+}: EmployeeBulkTransferDialogProps) {
   const params = useParams();
   const firmSlug = params.firmSlug as string;
 
@@ -65,6 +64,9 @@ export function EmployeeTransferDialog({
   const [clients, setClients] = React.useState<Client[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [failures, setFailures] = React.useState<
+    { employee: Employee; message: string }[]
+  >([]);
 
   const [formData, setFormData] = React.useState({
     toFirmId: '',
@@ -72,14 +74,14 @@ export function EmployeeTransferDialog({
     transferDate: new Date().toISOString().split('T')[0],
     effectiveDate: new Date().toISOString().split('T')[0],
     reason: '',
-    createNewContract: false,
-    newMatricule: '',
     notes: ''
   });
 
   React.useEffect(() => {
     if (open) {
       fetchFirmAndHolding();
+      setFailures([]);
+      setError(null);
     }
   }, [open, firmSlug]);
 
@@ -114,7 +116,6 @@ export function EmployeeTransferDialog({
       const res = await fetch(`/api/holdings/${holdingId}/firms?module=hr`);
       if (res.ok) {
         const data = await res.json();
-        // Filter out current firm
         setFirms(data.filter((f: Firm) => f.id !== firmId));
       }
     } catch (error) {
@@ -136,9 +137,22 @@ export function EmployeeTransferDialog({
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      toFirmId: '',
+      clientId: '',
+      transferDate: new Date().toISOString().split('T')[0],
+      effectiveDate: new Date().toISOString().split('T')[0],
+      reason: '',
+      notes: ''
+    });
+    setFailures([]);
+    setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firmId || !employee) return;
+    if (!firmId || employees.length === 0) return;
 
     if (!formData.toFirmId) {
       setError("Veuillez sélectionner l'entreprise de destination");
@@ -152,66 +166,89 @@ export function EmployeeTransferDialog({
 
     setLoading(true);
     setError(null);
+    setFailures([]);
 
-    try {
-      const payload = {
-        employeeId: employee.id,
-        fromFirmId: firmId,
-        toFirmId: formData.toFirmId,
-        clientId: formData.clientId || null,
-        transferDate: new Date(formData.transferDate).toISOString(),
-        effectiveDate: new Date(formData.effectiveDate).toISOString(),
-        reason: formData.reason,
-        newMatricule: formData.newMatricule.trim() || null,
-        notes: formData.notes,
-        status: 'PENDING'
-      };
+    const results = await Promise.all(
+      employees.map(async (employee) => {
+        const payload = {
+          employeeId: employee.id,
+          fromFirmId: firmId,
+          toFirmId: formData.toFirmId,
+          clientId: formData.clientId || null,
+          transferDate: new Date(formData.transferDate).toISOString(),
+          effectiveDate: new Date(formData.effectiveDate).toISOString(),
+          reason: formData.reason,
+          notes: formData.notes,
+          status: 'PENDING'
+        };
 
-      const res = await fetch(`/api/firms/${firmId}/transfers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        try {
+          const res = await fetch(`/api/firms/${firmId}/transfers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to create transfer request');
-      }
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            return {
+              employee,
+              ok: false,
+              message: data.error || 'Échec de la demande'
+            };
+          }
 
-      onSuccess?.();
+          return { employee, ok: true, message: '' };
+        } catch (err: any) {
+          return {
+            employee,
+            ok: false,
+            message: err?.message || 'Erreur réseau'
+          };
+        }
+      })
+    );
+
+    const failed = results.filter((r) => !r.ok);
+    const succeeded = results.length - failed.length;
+
+    setLoading(false);
+
+    if (failed.length > 0) {
+      setFailures(
+        failed.map((f) => ({ employee: f.employee, message: f.message }))
+      );
+    }
+
+    if (succeeded > 0) {
+      onSuccess?.(succeeded);
+    }
+
+    if (failed.length === 0) {
       onOpenChange(false);
-
-      // Reset form
-      setFormData({
-        toFirmId: '',
-        clientId: '',
-        transferDate: new Date().toISOString().split('T')[0],
-        effectiveDate: new Date().toISOString().split('T')[0],
-        reason: '',
-        createNewContract: false,
-        newMatricule: '',
-        notes: ''
-      });
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      resetForm();
     }
   };
 
-  if (!employee) return null;
+  if (employees.length === 0) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        onOpenChange(value);
+        if (!value) resetForm();
+      }}
+    >
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <ArrowRightLeft className='h-5 w-5' />
-            Transférer l&apos;employé
+            Transférer {employees.length} employé(s)
           </DialogTitle>
           <DialogDescription>
-            Transférer {employee.firstName} {employee.lastName} (
-            {employee.matricule}) vers une autre entreprise
+            Créer une demande de transfert pour les employés sélectionnés vers
+            une autre entreprise du groupe.
           </DialogDescription>
         </DialogHeader>
 
@@ -220,16 +257,58 @@ export function EmployeeTransferDialog({
             <Alert>
               <Info className='h-4 w-4' />
               <AlertDescription>
-                Ce transfert est utilisé lorsqu&apos;un employé a atteint la
-                limite de 24 mois cumulés en contrat intérimaire et doit être
-                transféré vers une autre entreprise du groupe.
+                Une demande de transfert sera créée pour chaque employé. Si un
+                employé a déjà une demande en attente, sa demande sera ignorée.
+                Les conflits de matricule devront être résolus individuellement
+                avant la finalisation.
               </AlertDescription>
             </Alert>
+
+            {/* Selected employees list */}
+            <div className='space-y-2'>
+              <Label>Employés sélectionnés ({employees.length})</Label>
+              <ScrollArea className='h-32 rounded-md border'>
+                <div className='divide-y'>
+                  {employees.map((emp) => (
+                    <div
+                      key={emp.id}
+                      className='flex items-center justify-between px-3 py-2 text-sm'
+                    >
+                      <span>
+                        {emp.firstName} {emp.lastName}
+                      </span>
+                      <span className='text-muted-foreground font-mono text-xs'>
+                        {emp.matricule}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
 
             {error && (
               <Alert variant='destructive'>
                 <AlertTriangle className='h-4 w-4' />
                 <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {failures.length > 0 && (
+              <Alert variant='destructive'>
+                <AlertTriangle className='h-4 w-4' />
+                <AlertDescription>
+                  <div className='font-medium'>
+                    {failures.length} demande(s) en échec :
+                  </div>
+                  <ul className='mt-2 list-disc space-y-1 pl-4 text-sm'>
+                    {failures.map((f) => (
+                      <li key={f.employee.id}>
+                        {f.employee.firstName} {f.employee.lastName} —{' '}
+                        {f.message}
+                      </li>
+                    ))}
+                  </ul>
+                </AlertDescription>
               </Alert>
             )}
 
@@ -305,7 +384,7 @@ export function EmployeeTransferDialog({
                   onChange={(e) =>
                     setFormData({ ...formData, transferDate: e.target.value })
                   }
-                  className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                  className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                   required
                 />
               </div>
@@ -319,7 +398,7 @@ export function EmployeeTransferDialog({
                   onChange={(e) =>
                     setFormData({ ...formData, effectiveDate: e.target.value })
                   }
-                  className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
+                  className='border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
                   required
                 />
               </div>
@@ -340,25 +419,6 @@ export function EmployeeTransferDialog({
               />
             </div>
 
-            {/* New matricule */}
-            <div className='space-y-2'>
-              <Label htmlFor='newMatricule'>
-                Nouveau matricule (optionnel)
-              </Label>
-              <Input
-                id='newMatricule'
-                value={formData.newMatricule}
-                onChange={(e) =>
-                  setFormData({ ...formData, newMatricule: e.target.value })
-                }
-                placeholder={`Laisser vide pour conserver "${employee.matricule}"`}
-              />
-              <p className='text-muted-foreground text-xs'>
-                Requis uniquement si le matricule actuel est déjà utilisé dans
-                l&apos;entreprise de destination.
-              </p>
-            </div>
-
             {/* Notes */}
             <div className='space-y-2'>
               <Label htmlFor='notes'>Notes supplémentaires (optionnel)</Label>
@@ -371,27 +431,6 @@ export function EmployeeTransferDialog({
                 placeholder='Informations additionnelles...'
                 rows={2}
               />
-            </div>
-
-            {/* Create Contract Option */}
-            <div className='flex items-center space-x-2'>
-              <Checkbox
-                id='createContract'
-                checked={formData.createNewContract}
-                onCheckedChange={(checked) =>
-                  setFormData({
-                    ...formData,
-                    createNewContract: checked as boolean
-                  })
-                }
-              />
-              <Label
-                htmlFor='createContract'
-                className='cursor-pointer text-sm font-normal'
-              >
-                Créer automatiquement un nouveau contrat dans l&apos;entreprise
-                de destination
-              </Label>
             </div>
           </div>
 
@@ -406,7 +445,7 @@ export function EmployeeTransferDialog({
             </Button>
             <Button type='submit' disabled={loading || firms.length === 0}>
               {loading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-              Créer la demande de transfert
+              Créer {employees.length} demande(s) de transfert
             </Button>
           </DialogFooter>
         </form>
