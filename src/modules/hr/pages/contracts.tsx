@@ -221,7 +221,7 @@ export default function ContractsPage() {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10'
+        limit: '12'
       });
 
       if (statusFilter) params.append('status', statusFilter);

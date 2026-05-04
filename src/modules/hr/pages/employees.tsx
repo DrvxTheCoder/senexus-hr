@@ -685,6 +685,9 @@ export default function EmployeesPage() {
                       (1000 * 60 * 60 * 24)
                   );
                   const remaining = Math.max(0, 730 - days);
+                  // The 24-month limit doesn't apply to permanent (CDI) contracts
+                  const activeContractType = emp.contracts?.[0]?.type;
+                  const showInterimLimit = activeContractType !== 'CDI';
 
                   // Get initials for fallback
                   const initials =
@@ -734,20 +737,22 @@ export default function EmployeesPage() {
                           <span className='text-sm'>
                             {formatDuration(days)}
                           </span>
-                          {remaining === 0 && (
+                          {showInterimLimit && remaining === 0 && (
                             <Badge variant='destructive' className='text-xs'>
                               <AlertTriangle className='mr-1 h-3 w-3' />
                               Limite
                             </Badge>
                           )}
-                          {remaining <= 90 && remaining > 0 && (
-                            <Badge
-                              variant='outline'
-                              className='border-orange-500 text-xs text-orange-600'
-                            >
-                              {remaining}j
-                            </Badge>
-                          )}
+                          {showInterimLimit &&
+                            remaining <= 90 &&
+                            remaining > 0 && (
+                              <Badge
+                                variant='outline'
+                                className='border-orange-500 text-xs text-orange-600'
+                              >
+                                {remaining}j
+                              </Badge>
+                            )}
                         </div>
                       </TableCell>
                       <TableCell>
