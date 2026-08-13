@@ -1,5 +1,6 @@
 'use client';
 
+import { ensureHttps } from '@/lib/utils';
 import { ImagePreviewModal } from './ImagePreviewModal';
 import { PDFPreviewModal } from './PDFPreviewModal';
 
@@ -20,13 +21,14 @@ export function DocumentPreviewModal({
 }: DocumentPreviewModalProps) {
   const isPDF = mimeType === 'application/pdf';
   const isImage = mimeType.startsWith('image/');
+  const secureUrl = ensureHttps(fileUrl);
 
   if (isPDF) {
     return (
       <PDFPreviewModal
         isOpen={isOpen}
         onClose={onClose}
-        pdfUrl={fileUrl}
+        pdfUrl={secureUrl}
         fileName={fileName}
       />
     );
@@ -37,7 +39,7 @@ export function DocumentPreviewModal({
       <ImagePreviewModal
         isOpen={isOpen}
         onClose={onClose}
-        imageUrl={fileUrl}
+        imageUrl={secureUrl}
         fileName={fileName}
       />
     );

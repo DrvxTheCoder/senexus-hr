@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Upgrade an `http://` URL to `https://` to avoid mixed-content blocking when
+ * the app is served over HTTPS. Zipline returns file URLs with an http scheme
+ * even though the host serves HTTPS, so previews/iframes get blocked without
+ * this. Leaves relative URLs and already-secure URLs untouched.
+ */
+export function ensureHttps(url: string): string {
+  if (!url) return url;
+  return url.replace(/^http:\/\//i, 'https://');
+}
+
 export function formatBytes(
   bytes: number,
   opts: {

@@ -109,9 +109,13 @@ export async function uploadToZipline(
       throw new Error('No file URL returned from Zipline');
     }
 
-    // Return the first file URL - extract URL string if it's an object
+    // Return the first file URL - extract URL string if it's an object.
+    // Zipline returns http:// URLs even though the host serves HTTPS; upgrade
+    // the scheme so previews aren't blocked as mixed content when served
+    // from an HTTPS app.
     const firstFile = data.files[0];
-    return typeof firstFile === 'string' ? firstFile : firstFile.url;
+    const fileUrl = typeof firstFile === 'string' ? firstFile : firstFile.url;
+    return fileUrl.replace(/^http:\/\//i, 'https://');
   } catch (error) {
     if (error instanceof Error) {
       throw error;

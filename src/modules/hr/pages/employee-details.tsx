@@ -60,6 +60,7 @@ import {
 import { DocumentUploadDialog } from '../components/document-form/DocumentUploadDialog';
 import { DocumentPreviewModal } from '../components/documents/DocumentPreviewModal';
 import { toast } from 'sonner';
+import { ensureHttps } from '@/lib/utils';
 
 interface Employee {
   id: string;
@@ -853,7 +854,10 @@ export default function EmployeeDetailsPage() {
                                     variant='ghost'
                                     size='icon'
                                     onClick={() =>
-                                      window.open(doc.fileUrl, '_blank')
+                                      window.open(
+                                        ensureHttps(doc.fileUrl),
+                                        '_blank'
+                                      )
                                     }
                                     title='Télécharger'
                                   >
